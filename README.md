@@ -1,2 +1,2 @@
 # ether
-🗫 Service for managing conversations
+💬 Service for managing conversations
