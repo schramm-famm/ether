@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ether/handlers"
 	"log"
 	"net/http"
 	"time"
@@ -17,6 +18,10 @@ func logging(f http.HandlerFunc) http.HandlerFunc {
 
 func main() {
 	httpMux := mux.NewRouter()
+	httpMux.HandleFunc(
+		"/api/conversations",
+		logging(handlers.PostConversationHandler),
+	).Methods("POST")
 
 	httpSrv := &http.Server{
 		Addr:         ":8080",
