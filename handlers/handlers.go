@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Conversation) error {
@@ -28,8 +29,66 @@ func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Con
 	return nil
 }
 
-// PostConversationHandler creates a new conversation
-func PostConversationHandler(w http.ResponseWriter, r *http.Request) {
+// PostConversationsHandler creates a new conversation
+func PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	reqBody := models.NewConversation()
+	if err := parseReqBody(w, r.Body, reqBody); err != nil {
+		return
+	}
+
+	json.NewEncoder(w).Encode(reqBody)
+}
+
+// GetConversationsHandler gets filtered conversations for a user
+func GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
+	queryValues, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		errMsg := "Failed to parse query: " + err.Error()
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	resBody := map[string]string{
+		"user_id": queryValues.Get("user_id"),
+	}
+
+	json.NewEncoder(w).Encode(resBody)
+}
+
+// PutConversationsHandler replaces, or creates if does not exist, a conversation
+func PutConversationsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	reqBody := models.NewConversation()
+	if err := parseReqBody(w, r.Body, reqBody); err != nil {
+		return
+	}
+
+	json.NewEncoder(w).Encode(reqBody)
+}
+
+// DeleteConversationsHandler deletes a conversation
+func DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
+	queryValues, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		errMsg := "Failed to parse query: " + err.Error()
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	resBody := map[string]string{
+		"user_id": queryValues.Get("user_id"),
+	}
+
+	json.NewEncoder(w).Encode(resBody)
+}
+
+// PatchConversationsHandler updates a conversation
+func PatchConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	reqBody := models.NewConversation()

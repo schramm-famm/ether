@@ -20,8 +20,24 @@ func main() {
 	httpMux := mux.NewRouter()
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(handlers.PostConversationHandler),
+		logging(handlers.PostConversationsHandler),
 	).Methods("POST")
+	httpMux.HandleFunc(
+		"/api/conversations",
+		logging(handlers.GetConversationsHandler),
+	).Methods("GET")
+	httpMux.HandleFunc(
+		"/api/conversations",
+		logging(handlers.PutConversationsHandler),
+	).Methods("PUT")
+	httpMux.HandleFunc(
+		"/api/conversations",
+		logging(handlers.DeleteConversationsHandler),
+	).Methods("DELETE")
+	httpMux.HandleFunc(
+		"/api/conversations",
+		logging(handlers.PatchConversationsHandler),
+	).Methods("PATCH")
 
 	httpSrv := &http.Server{
 		Addr:         ":8080",
