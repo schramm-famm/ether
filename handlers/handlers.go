@@ -33,7 +33,7 @@ func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Con
 func PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	reqBody := models.NewConversation()
+	reqBody := &models.Conversation{}
 	if err := parseReqBody(w, r.Body, reqBody); err != nil {
 		return
 	}
@@ -62,7 +62,7 @@ func GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
 func PutConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	reqBody := models.NewConversation()
+	reqBody := &models.Conversation{}
 	if err := parseReqBody(w, r.Body, reqBody); err != nil {
 		return
 	}
@@ -91,7 +91,7 @@ func DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
 func PatchConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	reqBody := models.NewConversation()
+	reqBody := &models.Conversation{}
 	if err := parseReqBody(w, r.Body, reqBody); err != nil {
 		return
 	}
