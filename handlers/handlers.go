@@ -58,18 +58,6 @@ func GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resBody)
 }
 
-// PutConversationsHandler replaces, or creates if does not exist, a conversation
-func PutConversationsHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	reqBody := &models.Conversation{}
-	if err := parseReqBody(w, r.Body, reqBody); err != nil {
-		return
-	}
-
-	json.NewEncoder(w).Encode(reqBody)
-}
-
 // DeleteConversationsHandler deletes a conversation
 func DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	queryValues, err := url.ParseQuery(r.URL.RawQuery)

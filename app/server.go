@@ -28,10 +28,6 @@ func main() {
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(handlers.PutConversationsHandler),
-	).Methods("PUT")
-	httpMux.HandleFunc(
-		"/api/conversations",
 		logging(handlers.DeleteConversationsHandler),
 	).Methods("DELETE")
 	httpMux.HandleFunc(
