@@ -40,7 +40,7 @@ func main() {
 	).Methods("PATCH")
 
 	httpSrv := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":80",
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  120 * time.Second,
