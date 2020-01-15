@@ -1,10 +1,28 @@
 package models
 
-// Conversation represents a conversation with one or more users
-type Conversation struct {
-	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	FilePath    string `json:"file_path,omitempty"`
-	Picture     string `json:"picture,omitempty"`
+import (
+	"database/sql"
+
+	// MySQL database driver
+	_ "github.com/go-sql-driver/mysql"
+)
+
+// Datastore defines the CRUD operations of models in the database
+type Datastore interface{}
+
+// DB represents an SQL database connection
+type DB struct {
+	*sql.DB
+}
+
+// NewDB initializes a new DB
+func NewDB(dataSourceName string) (*DB, error) {
+	db, err := sql.Open("mysql", dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return &DB{db}, nil
 }
