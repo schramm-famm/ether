@@ -10,6 +10,11 @@ import (
 	"net/url"
 )
 
+// Env represents all application-level items that are needed by handlers
+type Env struct {
+	DB models.Datastore
+}
+
 func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Conversation) error {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -30,7 +35,7 @@ func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Con
 }
 
 // PostConversationsHandler creates a new conversation
-func PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
+func (env *Env) PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	reqBody := &models.Conversation{}
@@ -42,7 +47,7 @@ func PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetConversationsHandler gets filtered conversations for a user
-func GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
+func (env *Env) GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	queryValues, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		errMsg := "Failed to parse query: " + err.Error()
@@ -59,7 +64,7 @@ func GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteConversationsHandler deletes a conversation
-func DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
+func (env *Env) DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	queryValues, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		errMsg := "Failed to parse query: " + err.Error()
@@ -76,7 +81,7 @@ func DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // PatchConversationsHandler updates a conversation
-func PatchConversationsHandler(w http.ResponseWriter, r *http.Request) {
+func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	reqBody := &models.Conversation{}

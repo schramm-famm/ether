@@ -2,8 +2,11 @@ package main
 
 import (
 	"ether/handlers"
+	"ether/models"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -17,22 +20,37 @@ func logging(f http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
+	connectionString := fmt.Sprintf(
+		"%s:%s@tcp(%s)/%s",
+		os.Getenv("ETHER_DB_USERNAME"),
+		os.Getenv("ETHER_DB_PASSWORD"),
+		os.Getenv("ETHER_DB_LOCATION"),
+		os.Getenv("ETHER_DB_DATABASE"))
+	db, err := models.NewDB(connectionString)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	log.Printf("%v", db)
+
+	env := &handlers.Env{db}
+
 	httpMux := mux.NewRouter()
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(handlers.PostConversationsHandler),
+		logging(env.PostConversationsHandler),
 	).Methods("POST")
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(handlers.GetConversationsHandler),
+		logging(env.GetConversationsHandler),
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(handlers.DeleteConversationsHandler),
+		logging(env.DeleteConversationsHandler),
 	).Methods("DELETE")
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(handlers.PatchConversationsHandler),
+		logging(env.PatchConversationsHandler),
 	).Methods("PATCH")
 
 	httpSrv := &http.Server{
