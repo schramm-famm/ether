@@ -47,6 +47,9 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) (i
 	if err != nil {
 		return -1, err
 	}
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf("Created %d row(s) in \"%s\"", rowCount, mappingsTable)
+	}
 	return res.LastInsertId()
 }
 
@@ -75,6 +78,7 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 		return nil, err
 	}
 	mapping.Pending = tmpPending == "\x00"
+	log.Printf("Read 1 row from \"%s\"", mappingsTable)
 	return mapping, nil
 }
 

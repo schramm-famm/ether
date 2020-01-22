@@ -28,6 +28,9 @@ func (db *DB) CreateConversation(conversation *Conversation) (int64, error) {
 	if err != nil {
 		return -1, err
 	}
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf("Created %d row(s) in \"%s\"", rowCount, conversationsTable)
+	}
 	return res.LastInsertId()
 }
 
@@ -43,6 +46,7 @@ func (db *DB) GetConversation(id int64) (*Conversation, error) {
 		}
 		return nil, err
 	}
+	log.Printf("Read 1 row from \"%s\"", conversationsTable)
 	return conversation, nil
 }
 
@@ -62,7 +66,12 @@ func (db *DB) UpdateConversation(conversation *Conversation) error {
 	}
 	fmt.Fprintf(&b, "WHERE ID=%d", conversation.ID)
 
-	_, err := db.Exec(b.String())
+	res, err := db.Exec(b.String())
+	if err == nil {
+		if rowCount, err := res.RowsAffected(); err == nil {
+			log.Printf("Updated %d row(s) in \"%s\"", rowCount, conversationsTable)
+		}
+	}
 	return err
 }
 
