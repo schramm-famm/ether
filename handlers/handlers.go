@@ -37,6 +37,44 @@ func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Con
 	return nil
 }
 
+func checkConversation(w http.ResponseWriter, db models.Datastore, id int64) (*models.Conversation, error) {
+	conversation, err := db.GetConversation(id)
+	if err != nil {
+		errMsg := "Internal Server Error"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusInternalServerError)
+		return nil, err
+	}
+
+	if conversation == nil {
+		errMsg := fmt.Sprintf("Conversation %d does not exist", id)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
+		return nil, nil
+	}
+
+	return conversation, nil
+}
+
+func checkMapping(w http.ResponseWriter, db models.Datastore, userID, convID int64) (*models.UserConversationMapping, error) {
+	mapping, err := db.GetUserConversationMapping(userID, convID)
+	if err != nil {
+		errMsg := "Internal Server Error"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusInternalServerError)
+		return nil, err
+	}
+
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, convID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
+		return nil, err
+	}
+
+	return mapping, nil
+}
+
 // PostConversationsHandler creates a new conversation
 func (env *Env) PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -101,33 +139,13 @@ func (env *Env) GetConversationsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	conversation, err := env.DB.GetConversation(conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+	conversation, err := checkConversation(w, env.DB, conversationID)
+	if err != nil || conversation == nil {
 		return
 	}
 
-	if conversation == nil {
-		errMsg := fmt.Sprintf("Conversation %d does not exist", conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
-		return
-	}
-
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	mapping, err := checkMapping(w, env.DB, userID, conversationID)
+	if err != nil || mapping == nil {
 		return
 	}
 
@@ -150,39 +168,19 @@ func (env *Env) DeleteConversationsHandler(w http.ResponseWriter, r *http.Reques
 	vars := mux.Vars(r)
 	conversationID, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
-		errMsg := "Invalid ID"
+		errMsg := "Invalid conversation ID"
 		log.Println(errMsg + ": " + err.Error())
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	conversation, err := env.DB.GetConversation(conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+	conversation, err := checkConversation(w, env.DB, conversationID)
+	if err != nil || conversation == nil {
 		return
 	}
 
-	if conversation == nil {
-		errMsg := fmt.Sprintf("Conversation %d does not exist", conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
-		return
-	}
-
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	mapping, err := checkMapping(w, env.DB, userID, conversationID)
+	if err != nil || mapping == nil {
 		return
 	}
 
@@ -243,33 +241,13 @@ func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	conversation, err := env.DB.GetConversation(conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+	conversation, err := checkConversation(w, env.DB, conversationID)
+	if err != nil || conversation == nil {
 		return
 	}
 
-	if conversation == nil {
-		errMsg := fmt.Sprintf("Conversation %d does not exist", conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
-		return
-	}
-
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	mapping, err := checkMapping(w, env.DB, userID, conversationID)
+	if err != nil || mapping == nil {
 		return
 	}
 
