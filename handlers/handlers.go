@@ -221,12 +221,12 @@ func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	reqBody := &models.Conversation{}
-	if err := parseReqBody(w, r.Body, reqBody); err != nil {
+	reqConversation := &models.Conversation{}
+	if err := parseReqBody(w, r.Body, reqConversation); err != nil {
 		return
 	}
 
-	if reqBody.Name == "" && reqBody.Description == nil {
+	if reqConversation.Name == "" && reqConversation.Description == nil {
 		errMsg := "Body has neither \"name\" nor \"description\""
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
@@ -251,8 +251,8 @@ func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	reqBody.ID = conversationID
-	err = env.DB.UpdateConversation(reqBody)
+	reqConversation.ID = conversationID
+	err = env.DB.UpdateConversation(reqConversation)
 	if err != nil {
 		errMsg := "Internal Server Error"
 		log.Println(errMsg + ": " + err.Error())
