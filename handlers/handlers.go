@@ -75,8 +75,8 @@ func getMapping(w http.ResponseWriter, db models.Datastore, userID, convID int64
 	return mapping, nil
 }
 
-// PostConversationsHandler creates a new conversation
-func (env *Env) PostConversationsHandler(w http.ResponseWriter, r *http.Request) {
+// PostConversationHandler creates a single new conversation
+func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
 	if err != nil {
@@ -127,8 +127,8 @@ func (env *Env) PostConversationsHandler(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(reqConversation)
 }
 
-// GetConversationsHandler gets filtered conversations for a user
-func (env *Env) GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
+// GetConversationHandler gets a single conversation
+func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
@@ -162,8 +162,8 @@ func (env *Env) GetConversationsHandler(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(conversation)
 }
 
-// DeleteConversationsHandler deletes a conversation
-func (env *Env) DeleteConversationsHandler(w http.ResponseWriter, r *http.Request) {
+// DeleteConversationHandler deletes a single conversation
+func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
@@ -217,8 +217,8 @@ func (env *Env) DeleteConversationsHandler(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(204)
 }
 
-// PatchConversationsHandler updates a conversation
-func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request) {
+// PatchConversationHandler updates a single conversation
+func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
 	if err != nil {

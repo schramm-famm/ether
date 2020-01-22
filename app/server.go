@@ -37,19 +37,19 @@ func main() {
 	httpMux := mux.NewRouter()
 	httpMux.HandleFunc(
 		"/api/conversations",
-		logging(env.PostConversationsHandler),
+		logging(env.PostConversationHandler),
 	).Methods("POST")
 	httpMux.HandleFunc(
 		"/api/conversations/{id}",
-		logging(env.GetConversationsHandler),
+		logging(env.GetConversationHandler),
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/api/conversations/{id}",
-		logging(env.DeleteConversationsHandler),
+		logging(env.DeleteConversationHandler),
 	).Methods("DELETE")
 	httpMux.HandleFunc(
 		"/api/conversations/{id}",
-		logging(env.PatchConversationsHandler),
+		logging(env.PatchConversationHandler),
 	).Methods("PATCH")
 
 	httpSrv := &http.Server{
