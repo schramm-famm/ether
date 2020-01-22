@@ -8,7 +8,16 @@ import (
 )
 
 // Datastore defines the CRUD operations of models in the database
-type Datastore interface{}
+type Datastore interface {
+	CreateConversation(conversation *Conversation) (int64, error)
+	GetConversation(id int64) (*Conversation, error)
+	DeleteConversation(id int64) error
+	UpdateConversation(conversation *Conversation) error
+
+	CreateUserConversationMapping(mapping *UserConversationMapping) (int64, error)
+	GetUserConversationMapping(userID, conversationID int64) (*UserConversationMapping, error)
+	DeleteConversationMappings(conversationID int64) error
+}
 
 // DB represents an SQL database connection
 type DB struct {

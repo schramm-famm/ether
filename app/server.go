@@ -31,7 +31,6 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	log.Printf("%v", db)
 
 	env := &handlers.Env{db}
 
@@ -41,20 +40,20 @@ func main() {
 		logging(env.PostConversationsHandler),
 	).Methods("POST")
 	httpMux.HandleFunc(
-		"/api/conversations",
+		"/api/conversations/{id}",
 		logging(env.GetConversationsHandler),
 	).Methods("GET")
 	httpMux.HandleFunc(
-		"/api/conversations",
+		"/api/conversations/{id}",
 		logging(env.DeleteConversationsHandler),
 	).Methods("DELETE")
 	httpMux.HandleFunc(
-		"/api/conversations",
+		"/api/conversations/{id}",
 		logging(env.PatchConversationsHandler),
 	).Methods("PATCH")
 
 	httpSrv := &http.Server{
-		Addr:         ":80",
+		Addr:         ":8080",
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  120 * time.Second,
