@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// UserConversationMapping represents a user's relationship to a conversation
 type UserConversationMapping struct {
 	UserID         int64  `json:"user_id,omitempty"`
 	ConversationID int64  `json:"conversation_id,omitempty"`
@@ -16,16 +17,26 @@ type UserConversationMapping struct {
 	LastOpened     string `json:"last_opened,omitempty"`
 }
 
+// Role represents a user's access control rights in a conversation
 type Role string
 
 const (
+	// Owner is a role that only the original creator of a conversation can have
+	// and represents the highest level of privilege
 	Owner Role = "owner"
+
+	// Admin is a role that multiple non-creator users in a conversation can
+	// have and represents elevated privilege over regular users
 	Admin Role = "admin"
-	User  Role = "user"
+
+	// User is a role that multiple non-creator users in a converation can have
+	// and represents the lowest level of privilege
+	User Role = "user"
 
 	mappingsTable string = "users_to_conversations"
 )
 
+// CreateUserConversationMapping adds a row to the "users_to_conversations" table
 func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) (int64, error) {
 	var b strings.Builder
 	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending) ", mappingsTable)
@@ -53,6 +64,9 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) (i
 	return res.LastInsertId()
 }
 
+// GetUserConversationMapping queries for a single row from the
+// "users_to_conversations" table using the combination of ConversationID and
+// UserID which should be unique to each row
 func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserConversationMapping, error) {
 	var tmpPending string
 	mapping := &UserConversationMapping{}
@@ -82,6 +96,8 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 	return mapping, nil
 }
 
+// DeleteConversationMappings removes every row in the "users_to_conversations"
+// table with a specified ConversationID
 func (db *DB) DeleteConversationMappings(conversationID int64) error {
 	queryString := fmt.Sprintf("DELETE FROM %s WHERE ConversationID = '%d'", mappingsTable, conversationID)
 
