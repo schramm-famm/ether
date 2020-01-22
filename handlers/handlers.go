@@ -91,11 +91,18 @@ func (env *Env) PostConversationsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if reqConversation.Name == "" || reqConversation.Description == nil {
+		errMsg := "Request body is missing field(s)"
+		fmt.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
 	conversationID, err := env.DB.CreateConversation(reqConversation)
 	if err != nil {
-		errMsg := "Failed to create row in \"conversations\" table" + err.Error()
-		log.Println(errMsg)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		errMsg := "Internal Server Error"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -108,9 +115,9 @@ func (env *Env) PostConversationsHandler(w http.ResponseWriter, r *http.Request)
 
 	_, err = env.DB.CreateUserConversationMapping(owner)
 	if err != nil {
-		errMsg := "Failed to create row in \"user_to_conversations\" table" + err.Error()
-		log.Println(errMsg)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		errMsg := "Internal Server Error"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -227,7 +234,8 @@ func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if reqConversation.Name == "" && reqConversation.Description == nil {
-		errMsg := "Body has neither \"name\" nor \"description\""
+		errMsg := "Request body has neither \"name\" nor \"description\""
+		fmt.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
