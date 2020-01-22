@@ -37,7 +37,7 @@ func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Con
 	return nil
 }
 
-func checkConversation(w http.ResponseWriter, db models.Datastore, id int64) (*models.Conversation, error) {
+func getConversation(w http.ResponseWriter, db models.Datastore, id int64) (*models.Conversation, error) {
 	conversation, err := db.GetConversation(id)
 	if err != nil {
 		errMsg := "Internal Server Error"
@@ -56,7 +56,7 @@ func checkConversation(w http.ResponseWriter, db models.Datastore, id int64) (*m
 	return conversation, nil
 }
 
-func checkMapping(w http.ResponseWriter, db models.Datastore, userID, convID int64) (*models.UserConversationMapping, error) {
+func getMapping(w http.ResponseWriter, db models.Datastore, userID, convID int64) (*models.UserConversationMapping, error) {
 	mapping, err := db.GetUserConversationMapping(userID, convID)
 	if err != nil {
 		errMsg := "Internal Server Error"
@@ -146,12 +146,12 @@ func (env *Env) GetConversationsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	conversation, err := checkConversation(w, env.DB, conversationID)
+	conversation, err := getConversation(w, env.DB, conversationID)
 	if err != nil || conversation == nil {
 		return
 	}
 
-	mapping, err := checkMapping(w, env.DB, userID, conversationID)
+	mapping, err := getMapping(w, env.DB, userID, conversationID)
 	if err != nil || mapping == nil {
 		return
 	}
@@ -181,12 +181,12 @@ func (env *Env) DeleteConversationsHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	conversation, err := checkConversation(w, env.DB, conversationID)
+	conversation, err := getConversation(w, env.DB, conversationID)
 	if err != nil || conversation == nil {
 		return
 	}
 
-	mapping, err := checkMapping(w, env.DB, userID, conversationID)
+	mapping, err := getMapping(w, env.DB, userID, conversationID)
 	if err != nil || mapping == nil {
 		return
 	}
@@ -249,12 +249,12 @@ func (env *Env) PatchConversationsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	conversation, err := checkConversation(w, env.DB, conversationID)
+	conversation, err := getConversation(w, env.DB, conversationID)
 	if err != nil || conversation == nil {
 		return
 	}
 
-	mapping, err := checkMapping(w, env.DB, userID, conversationID)
+	mapping, err := getMapping(w, env.DB, userID, conversationID)
 	if err != nil || mapping == nil {
 		return
 	}
