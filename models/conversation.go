@@ -18,6 +18,8 @@ const (
 	conversationsTable string = "conversations"
 )
 
+// Merge creates a new Conversation by copying the original Conversation and
+// replacing its fields with the non-zero-value fields of a patch Conversation
 func (c *Conversation) Merge(patch *Conversation) *Conversation {
 	newConversation := &Conversation{ID: c.ID}
 
