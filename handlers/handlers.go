@@ -127,7 +127,7 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	conversationID, err := strconv.ParseInt(vars["id"], 10, 64)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid ID"
 		log.Println(errMsg + ": " + err.Error())
@@ -163,7 +163,7 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	vars := mux.Vars(r)
-	conversationID, err := strconv.ParseInt(vars["id"], 10, 64)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid conversation ID"
 		log.Println(errMsg + ": " + err.Error())
@@ -223,7 +223,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	vars := mux.Vars(r)
-	conversationID, err := strconv.ParseInt(vars["id"], 10, 64)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid ID"
 		log.Println(errMsg + ": " + err.Error())

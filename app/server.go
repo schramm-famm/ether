@@ -40,15 +40,15 @@ func main() {
 		logging(env.PostConversationHandler),
 	).Methods("POST")
 	httpMux.HandleFunc(
-		"/api/conversations/{id}",
+		"/api/conversations/{conversation_id:[0-9]+}",
 		logging(env.GetConversationHandler),
 	).Methods("GET")
 	httpMux.HandleFunc(
-		"/api/conversations/{id}",
+		"/api/conversations/{conversation_id:[0-9]+}",
 		logging(env.DeleteConversationHandler),
 	).Methods("DELETE")
 	httpMux.HandleFunc(
-		"/api/conversations/{id}",
+		"/api/conversations/{conversation_id:[0-9]+}",
 		logging(env.PatchConversationHandler),
 	).Methods("PATCH")
 
