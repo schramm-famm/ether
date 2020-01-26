@@ -37,7 +37,7 @@ const (
 )
 
 // CreateUserConversationMapping adds a row to the "users_to_conversations" table
-func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) (int64, error) {
+func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending) ", mappingsTable)
 	pendingFlag := 0
@@ -56,12 +56,12 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) (i
 
 	res, err := db.Exec(b.String())
 	if err != nil {
-		return -1, err
+		return err
 	}
 	if rowCount, err := res.RowsAffected(); err == nil {
 		log.Printf("Created %d row(s) in \"%s\"", rowCount, mappingsTable)
 	}
-	return res.LastInsertId()
+	return nil
 }
 
 // GetUserConversationMapping queries for a single row from the
@@ -94,18 +94,4 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 	mapping.Pending = tmpPending == "\x00"
 	log.Printf("Read 1 row from \"%s\"", mappingsTable)
 	return mapping, nil
-}
-
-// DeleteConversationMappings removes every row in the "users_to_conversations"
-// table with a specified ConversationID
-func (db *DB) DeleteConversationMappings(conversationID int64) error {
-	queryString := fmt.Sprintf("DELETE FROM %s WHERE ConversationID = '%d'", mappingsTable, conversationID)
-
-	res, err := db.Exec(queryString)
-	if err == nil {
-		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf("Deleted %d row(s) from \"%s\"", rowCount, mappingsTable)
-		}
-	}
-	return err
 }

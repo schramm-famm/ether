@@ -98,22 +98,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	conversationID, err := env.DB.CreateConversation(reqConversation)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	owner := &models.UserConversationMapping{
-		UserID:         userID,
-		ConversationID: conversationID,
-		Role:           models.Owner,
-		Pending:        false,
-	}
-
-	_, err = env.DB.CreateUserConversationMapping(owner)
+	conversationID, err := env.DB.CreateConversation(reqConversation, userID)
 	if err != nil {
 		errMsg := "Internal Server Error"
 		log.Println(errMsg + ": " + err.Error())
@@ -124,6 +109,10 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 	// TODO: Create HTML file
 
 	reqConversation.ID = conversationID
+	location := fmt.Sprintf("/api/conversations/%d", conversationID)
+	w.Header().Add("Location", location)
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(reqConversation)
 }
 
@@ -159,6 +148,7 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: Get conversation HTML
 	// TODO: Get conversation picture
 
+	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
 }
 
@@ -198,14 +188,6 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = env.DB.DeleteConversationMappings(conversationID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return
-	}
-
 	err = env.DB.DeleteConversation(conversationID)
 	if err != nil {
 		errMsg := "Internal Server Error"
@@ -214,7 +196,7 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(204)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // PatchConversationHandler updates a single conversation
@@ -259,8 +241,9 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	reqConversation.ID = conversationID
-	err = env.DB.UpdateConversation(reqConversation)
+	newConversation := conversation.Merge(reqConversation)
+
+	err = env.DB.UpdateConversation(newConversation)
 	if err != nil {
 		errMsg := "Internal Server Error"
 		log.Println(errMsg + ": " + err.Error())
@@ -268,5 +251,6 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.WriteHeader(204)
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(newConversation)
 }
