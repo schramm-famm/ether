@@ -93,7 +93,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 
 	if reqConversation.Name == "" || reqConversation.Description == nil {
 		errMsg := "Request body is missing field(s)"
-		fmt.Println(errMsg)
+		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
