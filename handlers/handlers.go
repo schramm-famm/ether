@@ -109,7 +109,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 	// TODO: Create HTML file
 
 	reqConversation.ID = conversationID
-	location := fmt.Sprintf("/api/conversations/%d", conversationID)
+	location := fmt.Sprintf("%s/%d", r.URL.Path, conversationID)
 	w.Header().Add("Location", location)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
