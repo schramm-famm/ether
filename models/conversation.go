@@ -55,7 +55,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 		return -1, err
 	}
 	if rowCount, err := res.RowsAffected(); err == nil {
-		log.Printf("Created %d row(s) in \"%s\"", rowCount, conversationsTable)
+		log.Printf(`Created %d row(s) in "%s"`, rowCount, conversationsTable)
 	} else {
 		tx.Rollback()
 		return -1, err
@@ -85,7 +85,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 		return -1, err
 	}
 	if rowCount, err := res.RowsAffected(); err == nil {
-		log.Printf("Created %d row(s) in \"%s\"", rowCount, mappingsTable)
+		log.Printf(`Created %d row(s) in "%s"`, rowCount, mappingsTable)
 	} else {
 		tx.Rollback()
 		return -1, err
@@ -110,7 +110,7 @@ func (db *DB) GetConversation(id int64) (*Conversation, error) {
 		}
 		return nil, err
 	}
-	log.Printf("Read 1 row from \"%s\"", conversationsTable)
+	log.Printf(`Read 1 row from "%s"`, conversationsTable)
 	return conversation, nil
 }
 
@@ -129,7 +129,7 @@ func (db *DB) UpdateConversation(conversation *Conversation) error {
 	res, err := db.Exec(b.String())
 	if err == nil {
 		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf("Updated %d row(s) in \"%s\"", rowCount, conversationsTable)
+			log.Printf(`Updated %d row(s) in "%s"`, rowCount, conversationsTable)
 		}
 	}
 	return err
@@ -147,7 +147,7 @@ func (db *DB) DeleteConversation(id int64) error {
 	res, err := tx.Exec(queryString)
 	if err == nil {
 		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf("Deleted %d row(s) from \"%s\"", rowCount, mappingsTable)
+			log.Printf(`Deleted %d row(s) from "%s"`, rowCount, mappingsTable)
 		}
 	} else {
 		tx.Rollback()
@@ -159,7 +159,7 @@ func (db *DB) DeleteConversation(id int64) error {
 	res, err = tx.Exec(queryString)
 	if err == nil {
 		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf("Deleted %d row(s) from \"%s\"", rowCount, conversationsTable)
+			log.Printf(`Deleted %d row(s) from "%s"`, rowCount, conversationsTable)
 		}
 	} else {
 		tx.Rollback()

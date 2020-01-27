@@ -216,7 +216,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if reqConversation.Name == "" && reqConversation.Description == nil {
-		errMsg := "Request body has neither \"name\" nor \"description\""
+		errMsg := `Request body has neither "name" nor "description"`
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
