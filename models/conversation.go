@@ -54,6 +54,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 		tx.Rollback()
 		return -1, err
 	}
+
 	if rowCount, err := res.RowsAffected(); err == nil {
 		log.Printf(`Created %d row(s) in "%s"`, rowCount, conversationsTable)
 	} else {
@@ -84,6 +85,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 		tx.Rollback()
 		return -1, err
 	}
+
 	if rowCount, err := res.RowsAffected(); err == nil {
 		log.Printf(`Created %d row(s) in "%s"`, rowCount, mappingsTable)
 	} else {
@@ -127,12 +129,16 @@ func (db *DB) UpdateConversation(conversation *Conversation) error {
 	fmt.Fprintf(&b, "WHERE ID=%d", conversation.ID)
 
 	res, err := db.Exec(b.String())
-	if err == nil {
-		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf(`Updated %d row(s) in "%s"`, rowCount, conversationsTable)
-		}
+	if err != nil {
+		return err
 	}
-	return err
+
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf(`Updated %d row(s) in "%s"`, rowCount, conversationsTable)
+	} else {
+		log.Println("Failed to get number of rows affected: " + err.Error())
+	}
+	return nil
 }
 
 // DeleteConversation removes a row from the "conversations" table
@@ -145,10 +151,13 @@ func (db *DB) DeleteConversation(id int64) error {
 	queryString := fmt.Sprintf("DELETE FROM %s WHERE ConversationID = '%d'", mappingsTable, id)
 
 	res, err := tx.Exec(queryString)
-	if err == nil {
-		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf(`Deleted %d row(s) from "%s"`, rowCount, mappingsTable)
-		}
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf(`Deleted %d row(s) from "%s"`, rowCount, mappingsTable)
 	} else {
 		tx.Rollback()
 		return err
@@ -157,10 +166,13 @@ func (db *DB) DeleteConversation(id int64) error {
 	queryString = fmt.Sprintf("DELETE FROM %s WHERE ID = '%d'", conversationsTable, id)
 
 	res, err = tx.Exec(queryString)
-	if err == nil {
-		if rowCount, err := res.RowsAffected(); err == nil {
-			log.Printf(`Deleted %d row(s) from "%s"`, rowCount, conversationsTable)
-		}
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf(`Deleted %d row(s) from "%s"`, rowCount, conversationsTable)
 	} else {
 		tx.Rollback()
 		return err
