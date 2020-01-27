@@ -37,8 +37,8 @@ func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Con
 	return nil
 }
 
-func getConversation(w http.ResponseWriter, db models.Datastore, id int64) (*models.Conversation, error) {
-	conversation, err := db.GetConversation(id)
+func (env *Env) getConversation(w http.ResponseWriter, id int64) (*models.Conversation, error) {
+	conversation, err := env.DB.GetConversation(id)
 	if err != nil {
 		errMsg := "Internal Server Error"
 		log.Println(errMsg + ": " + err.Error())
@@ -56,8 +56,8 @@ func getConversation(w http.ResponseWriter, db models.Datastore, id int64) (*mod
 	return conversation, nil
 }
 
-func getMapping(w http.ResponseWriter, db models.Datastore, userID, convID int64) (*models.UserConversationMapping, error) {
-	mapping, err := db.GetUserConversationMapping(userID, convID)
+func (env *Env) getMapping(w http.ResponseWriter, userID, convID int64) (*models.UserConversationMapping, error) {
+	mapping, err := env.DB.GetUserConversationMapping(userID, convID)
 	if err != nil {
 		errMsg := "Internal Server Error"
 		log.Println(errMsg + ": " + err.Error())
@@ -135,12 +135,12 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conversation, err := getConversation(w, env.DB, conversationID)
+	conversation, err := env.getConversation(w, conversationID)
 	if err != nil || conversation == nil {
 		return
 	}
 
-	mapping, err := getMapping(w, env.DB, userID, conversationID)
+	mapping, err := env.getMapping(w, userID, conversationID)
 	if err != nil || mapping == nil {
 		return
 	}
@@ -171,12 +171,12 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	conversation, err := getConversation(w, env.DB, conversationID)
+	conversation, err := env.getConversation(w, conversationID)
 	if err != nil || conversation == nil {
 		return
 	}
 
-	mapping, err := getMapping(w, env.DB, userID, conversationID)
+	mapping, err := env.getMapping(w, userID, conversationID)
 	if err != nil || mapping == nil {
 		return
 	}
@@ -231,12 +231,12 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	conversation, err := getConversation(w, env.DB, conversationID)
+	conversation, err := env.getConversation(w, conversationID)
 	if err != nil || conversation == nil {
 		return
 	}
 
-	mapping, err := getMapping(w, env.DB, userID, conversationID)
+	mapping, err := env.getMapping(w, userID, conversationID)
 	if err != nil || mapping == nil {
 		return
 	}
