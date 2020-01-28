@@ -40,21 +40,19 @@ const (
 func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending) ", mappingsTable)
+	fmt.Fprintf(&b, "VALUES(?, ?, ?, ?, ?)")
 	pendingFlag := 0
 	if mapping.Pending {
 		pendingFlag = 1
 	}
-	fmt.Fprintf(
-		&b,
-		"VALUES(%d, %d, %q, %q, %b)",
+	res, err := db.Exec(
+		b.String(),
 		mapping.UserID,
 		mapping.ConversationID,
 		mapping.Role,
 		mapping.Nickname,
 		pendingFlag,
 	)
-
-	res, err := db.Exec(b.String())
 	if err != nil {
 		return err
 	}
@@ -70,14 +68,8 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) er
 func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserConversationMapping, error) {
 	var tmpPending string
 	mapping := &UserConversationMapping{}
-	queryString := fmt.Sprintf(
-		"SELECT * FROM %s WHERE UserID = %d AND ConversationID = %d",
-		mappingsTable,
-		userID,
-		conversationID,
-	)
-
-	err := db.QueryRow(queryString).Scan(
+	queryString := fmt.Sprintf("SELECT * FROM %s WHERE UserID=? AND ConversationID=?", mappingsTable)
+	err := db.QueryRow(queryString, userID, conversationID).Scan(
 		&(mapping.UserID),
 		&(mapping.ConversationID),
 		&(mapping.Role),

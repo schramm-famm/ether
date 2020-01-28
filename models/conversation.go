@@ -47,9 +47,8 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 
 	var b strings.Builder
 	fmt.Fprintf(&b, "INSERT INTO %s(Name, Description) ", conversationsTable)
-	fmt.Fprintf(&b, "VALUES(%q, %q)", conversation.Name, *conversation.Description)
-
-	res, err := tx.Exec(b.String())
+	fmt.Fprintf(&b, "VALUES(?, ?)")
+	res, err := tx.Exec(b.String(), conversation.Name, *conversation.Description)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -70,17 +69,8 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 
 	b.Reset()
 	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending) ", mappingsTable)
-	fmt.Fprintf(
-		&b,
-		"VALUES(%d, %d, %q, %q, %b)",
-		creatorID,
-		conversationID,
-		Owner,
-		"",
-		0,
-	)
-
-	res, err = tx.Exec(b.String())
+	fmt.Fprintf(&b, "VALUES(?, ?, ?, ?, ?)")
+	res, err = tx.Exec(b.String(), creatorID, conversationID, Owner, "", 0)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -103,9 +93,8 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 // GetConversation queries for a single row from the "conversations" table
 func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	conversation := &Conversation{}
-	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ID = '%d'", conversationsTable, id)
-
-	err := db.QueryRow(queryString).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description))
+	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ID=?", conversationsTable)
+	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -124,11 +113,8 @@ func (db *DB) UpdateConversation(conversation *Conversation) error {
 
 	var b strings.Builder
 	fmt.Fprintf(&b, "UPDATE %s SET ", conversationsTable)
-	fmt.Fprintf(&b, "Name=%q, ", conversation.Name)
-	fmt.Fprintf(&b, "Description=%q ", *conversation.Description)
-	fmt.Fprintf(&b, "WHERE ID=%d", conversation.ID)
-
-	res, err := db.Exec(b.String())
+	fmt.Fprintf(&b, "Name=?, Description=? WHERE ID=?")
+	res, err := db.Exec(b.String(), conversation.Name, *conversation.Description, conversation.ID)
 	if err != nil {
 		return err
 	}
@@ -148,9 +134,8 @@ func (db *DB) DeleteConversation(id int64) error {
 		return err
 	}
 
-	queryString := fmt.Sprintf("DELETE FROM %s WHERE ConversationID = '%d'", mappingsTable, id)
-
-	res, err := tx.Exec(queryString)
+	queryString := fmt.Sprintf("DELETE FROM %s WHERE ConversationID=?", mappingsTable)
+	res, err := tx.Exec(queryString, id)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -163,9 +148,8 @@ func (db *DB) DeleteConversation(id int64) error {
 		return err
 	}
 
-	queryString = fmt.Sprintf("DELETE FROM %s WHERE ID = '%d'", conversationsTable, id)
-
-	res, err = tx.Exec(queryString)
+	queryString = fmt.Sprintf("DELETE FROM %s WHERE ID=?", conversationsTable)
+	res, err = tx.Exec(queryString, id)
 	if err != nil {
 		tx.Rollback()
 		return err

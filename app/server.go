@@ -21,7 +21,7 @@ func logging(f http.HandlerFunc) http.HandlerFunc {
 
 func main() {
 	connectionString := fmt.Sprintf(
-		"%s:%s@tcp(%s)/%s",
+		"%s:%s@tcp(%s)/%s?interpolateParams=true",
 		os.Getenv("ETHER_DB_USERNAME"),
 		os.Getenv("ETHER_DB_PASSWORD"),
 		os.Getenv("ETHER_DB_LOCATION"),
