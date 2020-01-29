@@ -35,6 +35,8 @@ func main() {
 	env := &handlers.Env{db}
 
 	httpMux := mux.NewRouter()
+
+	// Conversation CRUD
 	httpMux.HandleFunc(
 		"/ether/v1/conversations",
 		logging(env.PostConversationHandler),
@@ -45,12 +47,34 @@ func main() {
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		logging(env.DeleteConversationHandler),
-	).Methods("DELETE")
-	httpMux.HandleFunc(
-		"/ether/v1/conversations/{conversation_id:[0-9]+}",
 		logging(env.PatchConversationHandler),
 	).Methods("PATCH")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}",
+		logging(env.DeleteConversationHandler),
+	).Methods("DELETE")
+
+	// User-Conversation Mapping CRUD
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
+		logging(env.PostMappingHandler),
+	).Methods("POST")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
+		logging(env.GetMappingHandler),
+	).Methods("GET")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
+		logging(env.GetMappingsHandler),
+	).Methods("GET")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
+		logging(env.PatchMappingHandler),
+	).Methods("PATCH")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
+		logging(env.DeleteMappingHandler),
+	).Methods("DELETE")
 
 	httpSrv := &http.Server{
 		Addr:         ":8080",
