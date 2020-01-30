@@ -18,7 +18,7 @@ type Env struct {
 	DB models.Datastore
 }
 
-func parseReqBody(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Conversation) error {
+func parseConversationJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Conversation) error {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		errMsg := "Failed to read request body: " + err.Error()
@@ -87,7 +87,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	reqConversation := &models.Conversation{}
-	if err := parseReqBody(w, r.Body, reqConversation); err != nil {
+	if err := parseConversationJSON(w, r.Body, reqConversation); err != nil {
 		return
 	}
 
@@ -211,7 +211,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	reqConversation := &models.Conversation{}
-	if err := parseReqBody(w, r.Body, reqConversation); err != nil {
+	if err := parseConversationJSON(w, r.Body, reqConversation); err != nil {
 		return
 	}
 

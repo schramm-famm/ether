@@ -9,12 +9,12 @@ import (
 
 // UserConversationMapping represents a user's relationship to a conversation
 type UserConversationMapping struct {
-	UserID         int64  `json:"user_id,omitempty"`
-	ConversationID int64  `json:"conversation_id,omitempty"`
-	Role           Role   `json:"role,omitempty"`
-	Nickname       string `json:"nickname,omitempty"`
-	Pending        bool   `json:"pending,omitempty"`
-	LastOpened     string `json:"last_opened,omitempty"`
+	UserID         int64   `json:"user_id,omitempty"`
+	ConversationID int64   `json:"conversation_id,omitempty"`
+	Role           Role    `json:"role,omitempty"`
+	Nickname       *string `json:"nickname,omitempty"`
+	Pending        bool    `json:"pending,omitempty"`
+	LastOpened     string  `json:"last_opened,omitempty"`
 }
 
 // Role represents a user's access control rights in a conversation
@@ -39,8 +39,8 @@ const (
 // CreateUserConversationMapping adds a row to the "users_to_conversations" table
 func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) error {
 	var b strings.Builder
-	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending) ", mappingsTable)
-	fmt.Fprintf(&b, "VALUES(?, ?, ?, ?, ?)")
+	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending, LastOpened) ", mappingsTable)
+	fmt.Fprintf(&b, "VALUES(?, ?, ?, ?, ?, ?)")
 	pendingFlag := 0
 	if mapping.Pending {
 		pendingFlag = 1
@@ -52,6 +52,7 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) er
 		mapping.Role,
 		mapping.Nickname,
 		pendingFlag,
+		mapping.LastOpened,
 	)
 	if err != nil {
 		return err
