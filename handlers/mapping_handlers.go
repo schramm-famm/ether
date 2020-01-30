@@ -75,6 +75,13 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if reqMapping.Role != models.Admin && reqMapping.Role != models.User {
+		errMsg := "Invalid role value"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
 	// TODO: Validate that user is real
 
 	reqMapping.ConversationID = conversationID
