@@ -87,3 +87,51 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 	log.Printf(`Read 1 row from "%s"`, mappingsTable)
 	return mapping, nil
 }
+
+// UpdateUserConversationMapping updates an existing row in the
+// "users_to_conversations" table
+func (db *DB) UpdateUserConversationMapping(mapping *UserConversationMapping) error {
+	var b strings.Builder
+	fmt.Fprintf(&b, "UPDATE %s SET ", mappingsTable)
+	fmt.Fprintf(&b, "Role=?, Nickname=?, Pending=? ")
+	fmt.Fprintf(&b, "WHERE UserID=? AND ConversationID=?")
+	pendingFlag := 0
+	if mapping.Pending {
+		pendingFlag = 1
+	}
+	res, err := db.Exec(
+		b.String(),
+		mapping.Role,
+		mapping.Nickname,
+		pendingFlag,
+		mapping.UserID,
+		mapping.ConversationID,
+	)
+	if err != nil {
+		return err
+	}
+
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf(`Updated %d row(s) in "%s"`, rowCount, mappingsTable)
+	} else {
+		log.Println("Failed to get number of rows affected: " + err.Error())
+	}
+	return nil
+}
+
+// DeleteUserConversationMapping removes a row from the "users_to_conversations"
+// table
+func (db *DB) DeleteUserConversationMapping(userID, conversationID int64) error {
+	queryString := fmt.Sprintf("DELETE FROM %s WHERE UserID=? AND ConversationID=?", mappingsTable)
+	res, err := db.Exec(queryString, userID, conversationID)
+	if err != nil {
+		return err
+	}
+
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf(`Deleted %d row(s) in "%s"`, rowCount, mappingsTable)
+	} else {
+		log.Println("Failed to get number of rows deleted: " + err.Error())
+	}
+	return nil
+}
