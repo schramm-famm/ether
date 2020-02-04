@@ -169,7 +169,48 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetMappingsHandler gets all users from a conversation
-func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {}
+func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid conversation ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
+		return
+	}
+
+	mappings, err := env.DB.GetUserConversationMappings(conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	mappingList := &models.UserConversationMappingList{Users: mappings}
+
+	// TODO: Get user names from karen?
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(mappingList)
+}
 
 // PatchMappingHandler updates a single user in a conversation
 func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {}

@@ -17,6 +17,11 @@ type UserConversationMapping struct {
 	LastOpened     string  `json:"last_opened,omitempty"`
 }
 
+// UserConversationMappingList represents a list of users in a conversation
+type UserConversationMappingList struct {
+	Users []*UserConversationMapping `json:"users"`
+}
+
 // Role represents a user's access control rights in a conversation
 type Role string
 
@@ -88,6 +93,38 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 	mapping.Pending = &pending
 	log.Printf(`Read 1 row from "%s"`, mappingsTable)
 	return mapping, nil
+}
+
+// GetUserConversationMappings queries for all the rows in the
+// "user_to_conversations" table with a given ConversationID
+func (db *DB) GetUserConversationMappings(conversationID int64) ([]*UserConversationMapping, error) {
+	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ConversationID=?", mappingsTable)
+	rows, err := db.Query(queryString, conversationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	mappings := make([]*UserConversationMapping, 0)
+	for rows.Next() {
+		mapping := &UserConversationMapping{}
+		var tmpPending string
+		err := rows.Scan(
+			&(mapping.UserID),
+			&(mapping.ConversationID),
+			&(mapping.Role),
+			&(mapping.Nickname),
+			&tmpPending,
+			&(mapping.LastOpened),
+		)
+		if err != nil {
+			return nil, err
+		}
+		var pending bool = tmpPending == "\x00"
+		mapping.Pending = &pending
+		mappings = append(mappings, mapping)
+	}
+	log.Printf(`Read %d row(s) from "%s"`, len(mappings), mappingsTable)
+	return mappings, nil
 }
 
 // UpdateUserConversationMapping updates an existing row in the

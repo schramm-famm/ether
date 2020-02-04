@@ -16,6 +16,7 @@ type Datastore interface {
 
 	CreateUserConversationMapping(mapping *UserConversationMapping) error
 	GetUserConversationMapping(userID, conversationID int64) (*UserConversationMapping, error)
+	GetUserConversationMappings(conversationID int64) ([]*UserConversationMapping, error)
 }
 
 // DB represents an SQL database connection
