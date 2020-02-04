@@ -101,7 +101,7 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
 	if err != nil {
-		errMsg := "Invalid ID"
+		errMsg := "Invalid conversation ID"
 		log.Println(errMsg + ": " + err.Error())
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
@@ -209,7 +209,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
 	if err != nil {
-		errMsg := "Invalid ID"
+		errMsg := "Invalid conversation ID"
 		log.Println(errMsg + ": " + err.Error())
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return

@@ -47,7 +47,7 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
 	if err != nil {
-		errMsg := "Invalid ID"
+		errMsg := "Invalid conversation ID"
 		log.Println(errMsg + ": " + err.Error())
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
@@ -135,8 +135,14 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.getMapping(w, userID, conversationID)
+	conversation, err := env.getConversation(w, conversationID)
+	if err != nil || conversation == nil {
+		return
+	}
+
+	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
+		internalServerError(w, err)
 		return
 	}
 	if mapping == nil {
@@ -146,8 +152,9 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err = env.getMapping(w, mappedUserID, conversationID)
+	mapping, err = env.DB.GetUserConversationMapping(mappedUserID, conversationID)
 	if err != nil {
+		internalServerError(w, err)
 		return
 	}
 	if mapping == nil {
