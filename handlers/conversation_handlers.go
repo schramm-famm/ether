@@ -56,25 +56,6 @@ func (env *Env) getConversation(w http.ResponseWriter, id int64) (*models.Conver
 	return conversation, nil
 }
 
-func (env *Env) getMapping(w http.ResponseWriter, userID, convID int64) (*models.UserConversationMapping, error) {
-	mapping, err := env.DB.GetUserConversationMapping(userID, convID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return nil, err
-	}
-
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, convID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
-		return nil, err
-	}
-
-	return mapping, nil
-}
-
 // PostConversationHandler creates a single new conversation
 func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -141,7 +122,13 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mapping, err := env.getMapping(w, userID, conversationID)
-	if err != nil || mapping == nil {
+	if err != nil {
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
@@ -177,7 +164,13 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	mapping, err := env.getMapping(w, userID, conversationID)
-	if err != nil || mapping == nil {
+	if err != nil {
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
@@ -238,6 +231,12 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 
 	mapping, err := env.getMapping(w, userID, conversationID)
 	if err != nil || mapping == nil {
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 

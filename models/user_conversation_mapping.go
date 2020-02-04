@@ -13,7 +13,7 @@ type UserConversationMapping struct {
 	ConversationID int64   `json:"conversation_id,omitempty"`
 	Role           Role    `json:"role,omitempty"`
 	Nickname       *string `json:"nickname,omitempty"`
-	Pending        bool    `json:"pending,omitempty"`
+	Pending        *bool   `json:"pending,omitempty"`
 	LastOpened     string  `json:"last_opened,omitempty"`
 }
 
@@ -42,7 +42,7 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) er
 	fmt.Fprintf(&b, "INSERT INTO %s(UserID, ConversationID, Role, Nickname, Pending, LastOpened) ", mappingsTable)
 	fmt.Fprintf(&b, "VALUES(?, ?, ?, ?, ?, ?)")
 	pendingFlag := 0
-	if mapping.Pending {
+	if *mapping.Pending {
 		pendingFlag = 1
 	}
 	res, err := db.Exec(
@@ -84,7 +84,8 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 		}
 		return nil, err
 	}
-	mapping.Pending = tmpPending == "\x00"
+	var pending bool = tmpPending == "\x00"
+	mapping.Pending = &pending
 	log.Printf(`Read 1 row from "%s"`, mappingsTable)
 	return mapping, nil
 }
@@ -97,7 +98,7 @@ func (db *DB) UpdateUserConversationMapping(mapping *UserConversationMapping) er
 	fmt.Fprintf(&b, "Role=?, Nickname=?, Pending=? ")
 	fmt.Fprintf(&b, "WHERE UserID=? AND ConversationID=?")
 	pendingFlag := 0
-	if mapping.Pending {
+	if *mapping.Pending {
 		pendingFlag = 1
 	}
 	res, err := db.Exec(

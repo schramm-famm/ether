@@ -33,6 +33,17 @@ func parseMappingJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *models
 	return nil
 }
 
+func (env *Env) getMapping(w http.ResponseWriter, userID, convID int64) (*models.UserConversationMapping, error) {
+	mapping, err := env.DB.GetUserConversationMapping(userID, convID)
+	if err != nil {
+		errMsg := "Internal Server Error"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusInternalServerError)
+		return nil, err
+	}
+	return mapping, nil
+}
+
 // PostMappingHandler adds a single user to a conversation
 func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -59,7 +70,13 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mapping, err := env.getMapping(w, userID, conversationID)
-	if err != nil || mapping == nil {
+	if err != nil {
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
@@ -86,7 +103,8 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 
 	reqMapping.ConversationID = conversationID
 	reqMapping.Nickname = new(string)
-	reqMapping.Pending = true
+	var pending bool = true
+	reqMapping.Pending = &pending
 	reqMapping.LastOpened = time.Now().Format("2006-01-02 15:04:05")
 	err = env.DB.CreateUserConversationMapping(reqMapping)
 	if err != nil {
@@ -104,7 +122,56 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetMappingHandler gets a single user from a conversation
-func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {}
+func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid conversation ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+	mappedUserID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	mapping, err := env.getMapping(w, userID, conversationID)
+	if err != nil {
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
+		return
+	}
+
+	mapping, err = env.getMapping(w, mappedUserID, conversationID)
+	if err != nil {
+		return
+	}
+	if mapping == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(mapping)
+}
 
 // GetMappingsHandler gets all users from a conversation
 func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {}
