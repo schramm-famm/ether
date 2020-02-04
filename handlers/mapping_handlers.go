@@ -33,17 +33,6 @@ func parseMappingJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *models
 	return nil
 }
 
-func (env *Env) getMapping(w http.ResponseWriter, userID, convID int64) (*models.UserConversationMapping, error) {
-	mapping, err := env.DB.GetUserConversationMapping(userID, convID)
-	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return nil, err
-	}
-	return mapping, nil
-}
-
 // PostMappingHandler adds a single user to a conversation
 func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -69,8 +58,9 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.getMapping(w, userID, conversationID)
+	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
+		internalServerError(w, err)
 		return
 	}
 	if mapping == nil {
@@ -108,9 +98,7 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	reqMapping.LastOpened = time.Now().Format("2006-01-02 15:04:05")
 	err = env.DB.CreateUserConversationMapping(reqMapping)
 	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		internalServerError(w, err)
 		return
 	}
 

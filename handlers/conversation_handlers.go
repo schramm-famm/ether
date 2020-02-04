@@ -13,11 +13,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Env represents all application-level items that are needed by handlers
-type Env struct {
-	DB models.Datastore
-}
-
 func parseConversationJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Conversation) error {
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -40,9 +35,7 @@ func parseConversationJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *m
 func (env *Env) getConversation(w http.ResponseWriter, id int64) (*models.Conversation, error) {
 	conversation, err := env.DB.GetConversation(id)
 	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		internalServerError(w, err)
 		return nil, err
 	}
 
@@ -81,9 +74,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 
 	conversationID, err := env.DB.CreateConversation(reqConversation, userID)
 	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		internalServerError(w, err)
 		return
 	}
 
@@ -121,8 +112,9 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.getMapping(w, userID, conversationID)
+	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
+		internalServerError(w, err)
 		return
 	}
 	if mapping == nil {
@@ -163,8 +155,9 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	mapping, err := env.getMapping(w, userID, conversationID)
+	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
+		internalServerError(w, err)
 		return
 	}
 	if mapping == nil {
@@ -183,9 +176,7 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 
 	err = env.DB.DeleteConversation(conversationID)
 	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		internalServerError(w, err)
 		return
 	}
 
@@ -229,8 +220,9 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	mapping, err := env.getMapping(w, userID, conversationID)
-	if err != nil || mapping == nil {
+	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
 		return
 	}
 	if mapping == nil {
@@ -244,9 +236,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 
 	err = env.DB.UpdateConversation(newConversation)
 	if err != nil {
-		errMsg := "Internal Server Error"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		internalServerError(w, err)
 		return
 	}
 
