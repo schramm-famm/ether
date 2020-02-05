@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
@@ -99,7 +100,14 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	reqMember.LastOpened = time.Now().Format("2006-01-02 15:04:05")
 	err = env.DB.CreateUserConversationMapping(reqMember)
 	if err != nil {
-		internalServerError(w, err)
+		mySQLErr, ok := err.(*mysql.MySQLError)
+		if ok && mySQLErr.Number == 1062 {
+			errMsg := fmt.Sprintf("User %d is already in conversation %d", reqMember.UserID, conversationID)
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusConflict)
+		} else {
+			internalServerError(w, err)
+		}
 		return
 	}
 
