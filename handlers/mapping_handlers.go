@@ -75,14 +75,15 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqMember.Role == "" {
+	if reqMember.UserID == 0 || reqMember.Role == "" {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	if reqMember.Role != models.Admin && reqMember.Role != models.User {
+	if reqMember.Role != models.Admin && reqMember.Role != models.User ||
+		sessionMember.Role != models.Owner && reqMember.Role != models.User {
 		errMsg := "Invalid role value"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
@@ -285,18 +286,19 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqMember.Role != models.Admin && reqMember.Role != models.User {
-		errMsg := "Invalid role value"
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
-		return
-	}
-
-	if res, _ := sessionMember.Role.Compare(member.Role); res == -1 {
-		errMsg := fmt.Sprintf("User %d does not have sufficient role level to modify role of %d", userID, memberID)
-		log.Println(errMsg)
-		http.Error(w, "Forbidden from modifying user role", http.StatusForbidden)
-		return
+	if reqMember.Role != "" {
+		if reqMember.Role != models.Admin && reqMember.Role != models.User {
+			errMsg := "Invalid role value"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusBadRequest)
+			return
+		}
+		if sessionMember.Role != models.Owner {
+			errMsg := fmt.Sprintf("User %d cannot modify roles in conversation %d", userID, conversationID)
+			log.Println(errMsg)
+			http.Error(w, "Forbidden from modifying roles", http.StatusForbidden)
+			return
+		}
 	}
 
 	newMember := member.Merge(reqMember)

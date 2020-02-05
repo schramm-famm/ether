@@ -66,27 +66,6 @@ func (m *UserConversationMapping) Merge(patch *UserConversationMapping) *UserCon
 	return newMapping
 }
 
-// Valid checks whether a given role has an acceptable string value
-func (r Role) Valid() bool {
-	return r == Owner || r == Admin || r == User
-}
-
-// Compare checks whether a given role value is greater than, less than, or
-// equal to another role value
-func (r Role) Compare(other Role) (int, bool) {
-	if !r.Valid() || !other.Valid() {
-		return -2, false
-	}
-
-	if r == other {
-		return 0, true
-	} else if r == Owner && (other == Admin || other == User) || r == Admin && other == User {
-		return 1, true
-	} else {
-		return -1, true
-	}
-}
-
 // CreateUserConversationMapping adds a row to the "users_to_conversations" table
 func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) error {
 	var b strings.Builder
