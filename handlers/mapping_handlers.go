@@ -223,6 +223,7 @@ func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {
 
 // PatchMappingHandler updates a single user in a conversation
 func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
