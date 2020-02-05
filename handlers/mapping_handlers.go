@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"ether/models"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,25 +12,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
-
-func parseMappingJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.UserConversationMapping) error {
-	bodyBytes, err := ioutil.ReadAll(body)
-	if err != nil {
-		errMsg := "Failed to read request body: " + err.Error()
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
-		return err
-	}
-
-	if err := json.Unmarshal(bodyBytes, bodyObj); err != nil {
-		errMsg := "Failed to parse request body: " + err.Error()
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
-		return err
-	}
-
-	return nil
-}
 
 // PostMappingHandler adds a single user to a conversation
 func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
@@ -59,20 +38,13 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if sessionMember == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
 	reqMember := &models.UserConversationMapping{}
-	if err := parseMappingJSON(w, r.Body, reqMember); err != nil {
+	if err := parseJSON(w, r.Body, reqMember); err != nil {
 		return
 	}
 
@@ -149,27 +121,13 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if sessionMember == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
-	member, err := env.DB.GetUserConversationMapping(memberID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if member == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "User not found", http.StatusNotFound)
+	member, err := env.getMapping(w, memberID, conversationID, "User not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
@@ -196,15 +154,8 @@ func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if sessionMember == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
@@ -259,32 +210,18 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if sessionMember == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
-	member, err := env.DB.GetUserConversationMapping(memberID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if member == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "User not found", http.StatusNotFound)
+	member, err := env.getMapping(w, memberID, conversationID, "User not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
 	reqMember := &models.UserConversationMapping{}
-	if err := parseMappingJSON(w, r.Body, reqMember); err != nil {
+	if err := parseJSON(w, r.Body, reqMember); err != nil {
 		return
 	}
 
@@ -358,27 +295,13 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if sessionMember == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
-	member, err := env.DB.GetUserConversationMapping(memberID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if member == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "User not found", http.StatusNotFound)
+	member, err := env.getMapping(w, memberID, conversationID, "User not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 

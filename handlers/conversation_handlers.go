@@ -4,50 +4,12 @@ import (
 	"encoding/json"
 	"ether/models"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
-
-func parseConversationJSON(w http.ResponseWriter, body io.ReadCloser, bodyObj *models.Conversation) error {
-	bodyBytes, err := ioutil.ReadAll(body)
-	if err != nil {
-		errMsg := "Failed to read request body: " + err.Error()
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
-		return err
-	}
-
-	if err := json.Unmarshal(bodyBytes, bodyObj); err != nil {
-		errMsg := "Failed to parse request body: " + err.Error()
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
-		return err
-	}
-
-	return nil
-}
-
-func (env *Env) getConversation(w http.ResponseWriter, id int64) (*models.Conversation, error) {
-	conversation, err := env.DB.GetConversation(id)
-	if err != nil {
-		internalServerError(w, err)
-		return nil, err
-	}
-
-	if conversation == nil {
-		errMsg := fmt.Sprintf("Conversation %d does not exist", id)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
-		return nil, nil
-	}
-
-	return conversation, nil
-}
 
 // PostConversationHandler creates a single new conversation
 func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +23,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	reqConversation := &models.Conversation{}
-	if err := parseConversationJSON(w, r.Body, reqConversation); err != nil {
+	if err := parseJSON(w, r.Body, reqConversation); err != nil {
 		return
 	}
 
@@ -112,15 +74,8 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
@@ -155,19 +110,12 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
-	if mapping.Role != models.Owner {
+	if sessionMember.Role != models.Owner {
 		errMsg := fmt.Sprintf("User %d is not an Owner of conversation %d and cannot delete it", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "Forbidden from deleting conversation", http.StatusForbidden)
@@ -195,7 +143,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	reqConversation := &models.Conversation{}
-	if err := parseConversationJSON(w, r.Body, reqConversation); err != nil {
+	if err := parseJSON(w, r.Body, reqConversation); err != nil {
 		return
 	}
 
@@ -220,15 +168,8 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if mapping == nil {
-		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
-		log.Println(errMsg)
-		http.Error(w, "Conversation not found", http.StatusNotFound)
+	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
+	if err != nil || sessionMember == nil {
 		return
 	}
 
