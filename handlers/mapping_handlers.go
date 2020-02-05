@@ -58,31 +58,31 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	if mapping == nil {
+	if sessionMember == nil {
 		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
-	reqMapping := &models.UserConversationMapping{}
-	if err := parseMappingJSON(w, r.Body, reqMapping); err != nil {
+	reqMember := &models.UserConversationMapping{}
+	if err := parseMappingJSON(w, r.Body, reqMember); err != nil {
 		return
 	}
 
-	if reqMapping.Role == "" {
+	if reqMember.Role == "" {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	if reqMapping.Role != models.Admin && reqMapping.Role != models.User {
+	if reqMember.Role != models.Admin && reqMember.Role != models.User {
 		errMsg := "Invalid role value"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
@@ -91,22 +91,22 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Validate that user is real
 
-	reqMapping.ConversationID = conversationID
-	reqMapping.Nickname = new(string)
+	reqMember.ConversationID = conversationID
+	reqMember.Nickname = new(string)
 	var pending bool = true
-	reqMapping.Pending = &pending
-	reqMapping.LastOpened = time.Now().Format("2006-01-02 15:04:05")
-	err = env.DB.CreateUserConversationMapping(reqMapping)
+	reqMember.Pending = &pending
+	reqMember.LastOpened = time.Now().Format("2006-01-02 15:04:05")
+	err = env.DB.CreateUserConversationMapping(reqMember)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
 
-	location := fmt.Sprintf("%s/%d", r.URL.Path, reqMapping.UserID)
+	location := fmt.Sprintf("%s/%d", r.URL.Path, reqMember.UserID)
 	w.Header().Add("Location", location)
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(reqMapping)
+	json.NewEncoder(w).Encode(reqMember)
 }
 
 // GetMappingHandler gets a single user from a conversation
@@ -127,7 +127,7 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	mappedUserID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	memberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
 		log.Println(errMsg + ": " + err.Error())
@@ -140,24 +140,24 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	if mapping == nil {
+	if sessionMember == nil {
 		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
-	mapping, err = env.DB.GetUserConversationMapping(mappedUserID, conversationID)
+	member, err := env.DB.GetUserConversationMapping(memberID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	if mapping == nil {
+	if member == nil {
 		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "User not found", http.StatusNotFound)
@@ -165,7 +165,7 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(mapping)
+	json.NewEncoder(w).Encode(member)
 }
 
 // GetMappingsHandler gets all users from a conversation
@@ -187,29 +187,29 @@ func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mapping, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	if mapping == nil {
+	if sessionMember == nil {
 		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
-	mappings, err := env.DB.GetUserConversationMappings(conversationID)
+	members, err := env.DB.GetUserConversationMappings(conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	mappingList := &models.UserConversationMappingList{Users: mappings}
+	memberList := &models.UserConversationMappingList{Users: members}
 
 	// TODO: Get user names from karen?
 
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(mappingList)
+	json.NewEncoder(w).Encode(memberList)
 }
 
 // PatchMappingHandler updates a single user in a conversation
@@ -230,14 +230,14 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	memberUserID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	memberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
 		log.Println(errMsg + ": " + err.Error())
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	if userID == memberUserID {
+	if userID == memberID {
 		errMsg := "Cannot modify own role"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusForbidden)
@@ -249,65 +249,65 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionUser, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	if sessionUser == nil {
+	if sessionMember == nil {
 		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "Conversation not found", http.StatusNotFound)
 		return
 	}
 
-	memberUser, err := env.DB.GetUserConversationMapping(memberUserID, conversationID)
+	member, err := env.DB.GetUserConversationMapping(memberID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
-	if memberUser == nil {
+	if member == nil {
 		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	reqUser := &models.UserConversationMapping{}
-	if err := parseMappingJSON(w, r.Body, reqUser); err != nil {
+	reqMember := &models.UserConversationMapping{}
+	if err := parseMappingJSON(w, r.Body, reqMember); err != nil {
 		return
 	}
 
-	if reqUser.Role == "" && reqUser.Nickname == nil {
+	if reqMember.Role == "" && reqMember.Nickname == nil {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	if reqUser.Role != models.Admin && reqUser.Role != models.User {
+	if reqMember.Role != models.Admin && reqMember.Role != models.User {
 		errMsg := "Invalid role value"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	if res, _ := sessionUser.Role.Compare(memberUser.Role); res == -1 {
-		errMsg := fmt.Sprintf("User %d does not have sufficient role level to modify role of %d", userID, memberUserID)
+	if res, _ := sessionMember.Role.Compare(member.Role); res == -1 {
+		errMsg := fmt.Sprintf("User %d does not have sufficient role level to modify role of %d", userID, memberID)
 		log.Println(errMsg)
 		http.Error(w, "Forbidden from modifying user role", http.StatusForbidden)
 		return
 	}
 
-	newUser := memberUser.Merge(reqUser)
-	err = env.DB.UpdateUserConversationMapping(newUser)
+	newMember := member.Merge(reqMember)
+	err = env.DB.UpdateUserConversationMapping(newMember)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(newUser)
+	json.NewEncoder(w).Encode(newMember)
 }
 
 // DeleteMappingHandler deletes a single user from a conversation
