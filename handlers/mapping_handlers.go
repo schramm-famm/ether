@@ -213,7 +213,102 @@ func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // PatchMappingHandler updates a single user in a conversation
-func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {}
+func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid conversation ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+	memberUserID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+	if userID == memberUserID {
+		errMsg := "Cannot modify own role"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	}
+
+	conversation, err := env.getConversation(w, conversationID)
+	if err != nil || conversation == nil {
+		return
+	}
+
+	sessionUser, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if sessionUser == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
+		return
+	}
+
+	memberUser, err := env.DB.GetUserConversationMapping(memberUserID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if memberUser == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	reqUser := &models.UserConversationMapping{}
+	if err := parseMappingJSON(w, r.Body, reqUser); err != nil {
+		return
+	}
+
+	if reqUser.Role == "" && reqUser.Nickname == nil {
+		errMsg := "Request body is missing field(s)"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	if reqUser.Role != models.Admin && reqUser.Role != models.User {
+		errMsg := "Invalid role value"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	if res, _ := sessionUser.Role.Compare(memberUser.Role); res == -1 {
+		errMsg := fmt.Sprintf("User %d does not have sufficient role level to modify role of %d", userID, memberUserID)
+		log.Println(errMsg)
+		http.Error(w, "Forbidden from modifying user role", http.StatusForbidden)
+		return
+	}
+
+	newUser := memberUser.Merge(reqUser)
+	err = env.DB.UpdateUserConversationMapping(newUser)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(newUser)
+}
 
 // DeleteMappingHandler deletes a single user from a conversation
 func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {}

@@ -11,12 +11,13 @@ import (
 type Datastore interface {
 	CreateConversation(conversation *Conversation, creatorID int64) (int64, error)
 	GetConversation(id int64) (*Conversation, error)
-	DeleteConversation(id int64) error
 	UpdateConversation(conversation *Conversation) error
+	DeleteConversation(id int64) error
 
 	CreateUserConversationMapping(mapping *UserConversationMapping) error
 	GetUserConversationMapping(userID, conversationID int64) (*UserConversationMapping, error)
 	GetUserConversationMappings(conversationID int64) ([]*UserConversationMapping, error)
+	UpdateUserConversationMapping(mapping *UserConversationMapping) error
 }
 
 // DB represents an SQL database connection

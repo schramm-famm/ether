@@ -41,6 +41,52 @@ const (
 	mappingsTable string = "users_to_conversations"
 )
 
+// Merge creates a new UserConversationMapping by copying the original mapping
+// and replacing its fields with the non-zero-value fields of a patch mapping
+func (m *UserConversationMapping) Merge(patch *UserConversationMapping) *UserConversationMapping {
+	newMapping := &UserConversationMapping{
+		UserID:         m.UserID,
+		ConversationID: m.ConversationID,
+		Pending:        m.Pending,
+		LastOpened:     m.LastOpened,
+	}
+
+	if patch.Role != "" {
+		newMapping.Role = patch.Role
+	} else {
+		newMapping.Role = m.Role
+	}
+
+	if patch.Nickname != nil {
+		newMapping.Nickname = patch.Nickname
+	} else {
+		newMapping.Nickname = m.Nickname
+	}
+
+	return newMapping
+}
+
+// Valid checks whether a given role has an acceptable string value
+func (r Role) Valid() bool {
+	return r == Owner || r == Admin || r == User
+}
+
+// Compare checks whether a given role value is greater than, less than, or
+// equal to another role value
+func (r Role) Compare(other Role) (int, bool) {
+	if !r.Valid() || !other.Valid() {
+		return -2, false
+	}
+
+	if r == other {
+		return 0, true
+	} else if r == Owner && (other == Admin || other == User) || r == Admin && other == User {
+		return 1, true
+	} else {
+		return -1, true
+	}
+}
+
 // CreateUserConversationMapping adds a row to the "users_to_conversations" table
 func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) error {
 	var b strings.Builder
@@ -132,7 +178,7 @@ func (db *DB) GetUserConversationMappings(conversationID int64) ([]*UserConversa
 func (db *DB) UpdateUserConversationMapping(mapping *UserConversationMapping) error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "UPDATE %s SET ", mappingsTable)
-	fmt.Fprintf(&b, "Role=?, Nickname=?, Pending=? ")
+	fmt.Fprintf(&b, "Role=?, Nickname=?, Pending=?, LastOpened=? ")
 	fmt.Fprintf(&b, "WHERE UserID=? AND ConversationID=?")
 	pendingFlag := 0
 	if *mapping.Pending {
@@ -143,6 +189,7 @@ func (db *DB) UpdateUserConversationMapping(mapping *UserConversationMapping) er
 		mapping.Role,
 		mapping.Nickname,
 		pendingFlag,
+		mapping.LastOpened,
 		mapping.UserID,
 		mapping.ConversationID,
 	)
