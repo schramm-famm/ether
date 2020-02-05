@@ -321,4 +321,83 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteMappingHandler deletes a single user from a conversation
-func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {}
+func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	conversationID, err := strconv.ParseInt(vars["conversation_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid conversation ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+	memberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+	if userID == memberID {
+		errMsg := "Cannot removed self from conversation"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	}
+
+	conversation, err := env.getConversation(w, conversationID)
+	if err != nil || conversation == nil {
+		return
+	}
+
+	sessionMember, err := env.DB.GetUserConversationMapping(userID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if sessionMember == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Conversation not found", http.StatusNotFound)
+		return
+	}
+
+	member, err := env.DB.GetUserConversationMapping(memberID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if member == nil {
+		errMsg := fmt.Sprintf("User %d is not in conversation %d", userID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	res, err := sessionMember.Role.Compare(member.Role)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if res != 1 {
+		errMsg := fmt.Sprintf("User %d cannot remove user %d from conversation %d", userID, memberID, conversationID)
+		log.Println(errMsg)
+		http.Error(w, "Forbidden from removing this user", http.StatusForbidden)
+		return
+	}
+
+	err = env.DB.DeleteUserConversationMapping(memberID, conversationID)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

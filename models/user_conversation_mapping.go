@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -64,6 +65,31 @@ func (m *UserConversationMapping) Merge(patch *UserConversationMapping) *UserCon
 	}
 
 	return newMapping
+}
+
+// Valid checks whether a given role has an acceptable string value
+func (r Role) Valid() bool {
+	return r == Owner || r == Admin || r == User
+}
+
+// Compare checks whether a given role value is greater than, less than, or
+// equal to another role value
+func (r Role) Compare(other Role) (int, error) {
+	if !r.Valid() {
+		errStr := fmt.Sprintf("Invalid role value: %s", r)
+		return -2, errors.New(errStr)
+	} else if !other.Valid() {
+		errStr := fmt.Sprintf("Invalid role value: %s", other)
+		return -2, errors.New(errStr)
+	}
+
+	if r == other {
+		return 0, nil
+	} else if r == Owner && (other == Admin || other == User) || r == Admin && other == User {
+		return 1, nil
+	} else {
+		return -1, nil
+	}
 }
 
 // CreateUserConversationMapping adds a row to the "users_to_conversations" table
