@@ -97,7 +97,7 @@ func (db *DB) CreateUserConversationMapping(mapping *UserConversationMapping) er
 // "users_to_conversations" table using the combination of ConversationID and
 // UserID which should be unique to each row
 func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserConversationMapping, error) {
-	var tmpPending string
+	var tmpPending int8
 	mapping := &UserConversationMapping{}
 	queryString := fmt.Sprintf("SELECT * FROM %s WHERE UserID=? AND ConversationID=?", mappingsTable)
 	err := db.QueryRow(queryString, userID, conversationID).Scan(
@@ -114,7 +114,7 @@ func (db *DB) GetUserConversationMapping(userID, conversationID int64) (*UserCon
 		}
 		return nil, err
 	}
-	var pending bool = tmpPending == "\x00"
+	var pending bool = tmpPending == 1
 	mapping.Pending = &pending
 	log.Printf(`Read 1 row from "%s"`, mappingsTable)
 	return mapping, nil
@@ -132,7 +132,7 @@ func (db *DB) GetUserConversationMappings(conversationID int64) ([]*UserConversa
 	mappings := make([]*UserConversationMapping, 0)
 	for rows.Next() {
 		mapping := &UserConversationMapping{}
-		var tmpPending string
+		var tmpPending int8
 		err := rows.Scan(
 			&(mapping.UserID),
 			&(mapping.ConversationID),
@@ -144,7 +144,7 @@ func (db *DB) GetUserConversationMappings(conversationID int64) ([]*UserConversa
 		if err != nil {
 			return nil, err
 		}
-		var pending bool = tmpPending == "\x00"
+		var pending bool = tmpPending == 1
 		mapping.Pending = &pending
 		mappings = append(mappings, mapping)
 	}
