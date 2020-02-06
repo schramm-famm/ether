@@ -55,15 +55,13 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reqMember.Role != models.Admin && reqMember.Role != models.User ||
+	if !reqMember.Role.Valid() || reqMember.Role == models.Owner ||
 		sessionMember.Role != models.Owner && reqMember.Role != models.User {
 		errMsg := "Invalid role value"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-
-	// TODO: Validate that user is real
 
 	reqMember.ConversationID = conversationID
 	reqMember.Nickname = new(string)
@@ -126,9 +124,14 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member, err := env.getMapping(w, memberID, conversationID, "User not found")
-	if err != nil || sessionMember == nil {
-		return
+	var member *models.UserConversationMapping
+	if userID != memberID {
+		member, err = env.getMapping(w, memberID, conversationID, "User not found")
+		if err != nil || sessionMember == nil {
+			return
+		}
+	} else {
+		member = sessionMember
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -166,8 +169,6 @@ func (env *Env) GetMappingsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	memberList := &models.UserConversationMappingList{Users: members}
 
-	// TODO: Get user names from karen?
-
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(memberList)
 }
@@ -198,12 +199,6 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	if userID == memberID {
-		errMsg := "Cannot modify own role"
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusForbidden)
-		return
-	}
 
 	conversation, err := env.getConversation(w, conversationID)
 	if err != nil || conversation == nil {
@@ -215,17 +210,23 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member, err := env.getMapping(w, memberID, conversationID, "User not found")
-	if err != nil || sessionMember == nil {
-		return
+	var member *models.UserConversationMapping
+	if userID != memberID {
+		member, err = env.getMapping(w, memberID, conversationID, "User not found")
+		if err != nil || sessionMember == nil {
+			return
+		}
+	} else {
+		member = sessionMember
 	}
 
 	reqMember := &models.UserConversationMapping{}
 	if err := parseJSON(w, r.Body, reqMember); err != nil {
 		return
 	}
+	reqMember.LastOpened = ""
 
-	if reqMember.Role == "" && reqMember.Nickname == nil {
+	if reqMember.Role == "" && reqMember.Nickname == nil && reqMember.Pending == nil {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
@@ -233,16 +234,34 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if reqMember.Role != "" {
-		if reqMember.Role != models.Admin && reqMember.Role != models.User {
+		if !reqMember.Role.Valid() || reqMember.Role == models.Owner {
 			errMsg := "Invalid role value"
 			log.Println(errMsg)
 			http.Error(w, errMsg, http.StatusBadRequest)
 			return
-		}
-		if sessionMember.Role != models.Owner {
+		} else if sessionMember.Role != models.Owner {
 			errMsg := fmt.Sprintf("User %d cannot modify roles in conversation %d", userID, conversationID)
 			log.Println(errMsg)
 			http.Error(w, "Forbidden from modifying roles", http.StatusForbidden)
+			return
+		} else if userID == memberID {
+			errMsg := "Cannot modify own role"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusForbidden)
+			return
+		}
+	}
+
+	if reqMember.Pending != nil {
+		if userID != memberID {
+			errMsg := "Cannot modify invitation status of other user"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusForbidden)
+			return
+		} else if !*member.Pending {
+			errMsg := "Cannot modify invitation status after accepting invitation"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusForbidden)
 			return
 		}
 	}
@@ -283,12 +302,6 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	if userID == memberID {
-		errMsg := "Cannot removed self from conversation"
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusForbidden)
-		return
-	}
 
 	conversation, err := env.getConversation(w, conversationID)
 	if err != nil || conversation == nil {
@@ -300,18 +313,24 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member, err := env.getMapping(w, memberID, conversationID, "User not found")
-	if err != nil || sessionMember == nil {
-		return
-	}
+	if userID != memberID {
+		member, err := env.getMapping(w, memberID, conversationID, "User not found")
+		if err != nil || sessionMember == nil {
+			return
+		}
 
-	res, err := sessionMember.Role.Compare(member.Role)
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	if res != 1 {
-		errMsg := fmt.Sprintf("User %d cannot remove user %d from conversation %d", userID, memberID, conversationID)
+		res, err := sessionMember.Role.Compare(member.Role)
+		if err != nil {
+			internalServerError(w, err)
+			return
+		} else if res != 1 {
+			errMsg := fmt.Sprintf("User %d cannot remove user %d from conversation %d", userID, memberID, conversationID)
+			log.Println(errMsg)
+			http.Error(w, "Forbidden from removing this user", http.StatusForbidden)
+			return
+		}
+	} else if sessionMember.Role == models.Owner {
+		errMsg := fmt.Sprintf("User %d (owner) cannot remove themself from conversation %d", userID, conversationID)
 		log.Println(errMsg)
 		http.Error(w, "Forbidden from removing this user", http.StatusForbidden)
 		return

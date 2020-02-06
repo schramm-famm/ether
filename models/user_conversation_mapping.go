@@ -64,6 +64,18 @@ func (m *UserConversationMapping) Merge(patch *UserConversationMapping) *UserCon
 		newMapping.Nickname = m.Nickname
 	}
 
+	if patch.Pending != nil {
+		newMapping.Pending = patch.Pending
+	} else {
+		newMapping.Pending = m.Pending
+	}
+
+	if patch.LastOpened != "" {
+		newMapping.LastOpened = patch.LastOpened
+	} else {
+		newMapping.LastOpened = m.LastOpened
+	}
+
 	return newMapping
 }
 
