@@ -12,11 +12,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func logging(f http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func logging(f http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("path: %s, method: %s", r.URL.Path, r.Method)
-		f(w, r)
-	}
+		f.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -35,22 +35,47 @@ func main() {
 	env := &handlers.Env{db}
 
 	httpMux := mux.NewRouter()
+
+	// Conversation CRUD
 	httpMux.HandleFunc(
 		"/ether/v1/conversations",
-		logging(env.PostConversationHandler),
+		env.PostConversationHandler,
 	).Methods("POST")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		logging(env.GetConversationHandler),
+		env.GetConversationHandler,
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		logging(env.DeleteConversationHandler),
-	).Methods("DELETE")
+		env.PatchConversationHandler,
+	).Methods("PATCH")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		logging(env.PatchConversationHandler),
+		env.DeleteConversationHandler,
+	).Methods("DELETE")
+
+	// User-Conversation Mapping CRUD
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
+		env.PostMappingHandler,
+	).Methods("POST")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
+		env.GetMappingHandler,
+	).Methods("GET")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
+		env.GetMappingsHandler,
+	).Methods("GET")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
+		env.PatchMappingHandler,
 	).Methods("PATCH")
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
+		env.DeleteMappingHandler,
+	).Methods("DELETE")
+	httpMux.Use(logging)
 
 	httpSrv := &http.Server{
 		Addr:         ":8080",
