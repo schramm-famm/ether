@@ -43,6 +43,13 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if *sessionMember.Pending {
+		errMsg := "Cannot add users to conversation while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	}
+
 	reqMember := &models.UserConversationMapping{}
 	if err := parseJSON(w, r.Body, reqMember); err != nil {
 		return
@@ -210,6 +217,13 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if *sessionMember.Pending {
+		errMsg := "Cannot modify users in conversation while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	}
+
 	var member *models.UserConversationMapping
 	if userID != memberID {
 		member, err = env.getMapping(w, memberID, conversationID, "User not found")
@@ -310,6 +324,13 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionMember, err := env.getMapping(w, userID, conversationID, "Conversation not found")
 	if err != nil || sessionMember == nil {
+		return
+	}
+
+	if *sessionMember.Pending {
+		errMsg := "Cannot remove users from conversation while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
 		return
 	}
 

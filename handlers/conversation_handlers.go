@@ -173,6 +173,13 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if *sessionMember.Pending {
+		errMsg := "Cannot modify conversation while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	}
+
 	newConversation := conversation.Merge(reqConversation)
 
 	err = env.DB.UpdateConversation(newConversation)
