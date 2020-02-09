@@ -3,7 +3,7 @@ on: [push]
 jobs:
 
   build_and_unit_test:
-    name: Build Go app & run unit tests
+    name: Build & Unit Test
     runs-on: ubuntu-latest
     steps:
 
