@@ -29,13 +29,12 @@ func NewMockDB(
 }
 
 func (db *MockDB) getError() error {
-	if db.Errors == nil {
+	if db.Errors == nil || db.Count >= len(db.Errors) {
 		return nil
-	} else {
-		err := db.Errors[db.Count]
-		db.Count++
-		return err
 	}
+	err := db.Errors[db.Count]
+	db.Count++
+	return err
 }
 
 func (db *MockDB) CreateConversation(conversation *Conversation, creatorID int64) (int64, error) {
