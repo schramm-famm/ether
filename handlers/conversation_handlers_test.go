@@ -89,10 +89,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
 			w := httptest.NewRecorder()
 
-			mDB := &models.MockDB{
-				ConversationIDs: make([]int64, 0),
-				UserIDs:         make([]int64, 0),
-			}
+			mDB := models.NewMockDB(nil, nil, nil, nil)
 
 			env := &Env{DB: mDB}
 			env.PostConversationHandler(w, r)
@@ -178,12 +175,7 @@ func TestGetConversationsHandler(t *testing.T) {
 			})
 			w := httptest.NewRecorder()
 
-			mDB := &models.MockDB{
-				Conversation:    test.ResBody,
-				Mapping:         test.Mapping,
-				ConversationIDs: make([]int64, 0),
-				UserIDs:         make([]int64, 0),
-			}
+			mDB := models.NewMockDB(test.ResBody, test.Mapping, nil, nil)
 
 			env := &Env{DB: mDB}
 			env.GetConversationHandler(w, r)
@@ -359,11 +351,7 @@ func TestPatchConversationsHandler(t *testing.T) {
 			})
 			w := httptest.NewRecorder()
 
-			mDB := &models.MockDB{
-				Mapping:         test.Mapping,
-				ConversationIDs: make([]int64, 0),
-				UserIDs:         make([]int64, 0),
-			}
+			mDB := models.NewMockDB(nil, test.Mapping, nil, nil)
 			if test.InitialConversation {
 				mDB.Conversation = &models.Conversation{
 					ID:          1,
@@ -481,11 +469,7 @@ func TestDeleteConversationsHandler(t *testing.T) {
 			})
 			w := httptest.NewRecorder()
 
-			mDB := &models.MockDB{
-				Mapping:         test.Mapping,
-				ConversationIDs: make([]int64, 0),
-				UserIDs:         make([]int64, 0),
-			}
+			mDB := models.NewMockDB(nil, test.Mapping, nil, nil)
 			if test.InitialConversation {
 				mDB.Conversation = &models.Conversation{
 					ID:          1,
