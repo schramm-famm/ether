@@ -2,12 +2,11 @@ package models
 
 import (
 	"sort"
-	"strconv"
 )
 
 type MockDB struct {
 	Conversations   map[int64]*Conversation
-	Mappings        map[string]*UserConversationMapping
+	Mappings        map[int64]map[int64]*UserConversationMapping
 	Errors          []error
 	Count           int
 	AutoIncrementID int64
@@ -20,7 +19,7 @@ func NewMockDB(
 ) *MockDB {
 	db := &MockDB{
 		Conversations:   make(map[int64]*Conversation),
-		Mappings:        make(map[string]*UserConversationMapping),
+		Mappings:        make(map[int64]map[int64]*UserConversationMapping),
 		Errors:          errors,
 		Count:           0,
 		AutoIncrementID: 0,
@@ -53,11 +52,17 @@ func (db *MockDB) getError() error {
 }
 
 func (db *MockDB) GetMapping(userID, conversationID int64) *UserConversationMapping {
-	return db.Mappings[strconv.FormatInt(userID, 10)+","+strconv.FormatInt(conversationID, 10)]
+	if db.Mappings[conversationID] == nil {
+		return nil
+	}
+	return db.Mappings[conversationID][userID]
 }
 
 func (db *MockDB) SetMapping(userID, conversationID int64, mapping *UserConversationMapping) {
-	db.Mappings[strconv.FormatInt(userID, 10)+","+strconv.FormatInt(conversationID, 10)] = mapping
+	if db.Mappings[conversationID] == nil {
+		db.Mappings[conversationID] = make(map[int64]*UserConversationMapping)
+	}
+	db.Mappings[conversationID][userID] = mapping
 }
 
 func (db *MockDB) CreateConversation(conversation *Conversation, creatorID int64) (int64, error) {
@@ -113,16 +118,15 @@ func (db *MockDB) GetUserConversationMappings(conversationID int64) ([]*UserConv
 	if err := db.getError(); err != nil {
 		return nil, err
 	}
-	mappings := make([]*UserConversationMapping, 0)
-	for _, mapping := range db.Mappings {
-		if mapping.ConversationID == conversationID {
-			mappings = append(mappings, mapping)
-		}
+	mappings := db.Mappings[conversationID]
+	res := make([]*UserConversationMapping, 0)
+	for _, mapping := range mappings {
+		res = append(res, mapping)
 	}
-	sort.Slice(mappings, func(i, j int) bool {
-		return mappings[i].UserID < mappings[j].UserID
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].UserID < res[j].UserID
 	})
-	return mappings, nil
+	return res, nil
 }
 
 func (db *MockDB) UpdateUserConversationMapping(mapping *UserConversationMapping) error {
