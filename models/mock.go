@@ -1,6 +1,7 @@
 package models
 
 import (
+	"sort"
 	"strconv"
 )
 
@@ -52,11 +53,11 @@ func (db *MockDB) getError() error {
 }
 
 func (db *MockDB) GetMapping(userID, conversationID int64) *UserConversationMapping {
-	return db.Mappings[strconv.FormatInt(userID, 10)+strconv.FormatInt(conversationID, 10)]
+	return db.Mappings[strconv.FormatInt(userID, 10)+","+strconv.FormatInt(conversationID, 10)]
 }
 
 func (db *MockDB) SetMapping(userID, conversationID int64, mapping *UserConversationMapping) {
-	db.Mappings[strconv.FormatInt(userID, 10)+strconv.FormatInt(conversationID, 10)] = mapping
+	db.Mappings[strconv.FormatInt(userID, 10)+","+strconv.FormatInt(conversationID, 10)] = mapping
 }
 
 func (db *MockDB) CreateConversation(conversation *Conversation, creatorID int64) (int64, error) {
@@ -118,6 +119,9 @@ func (db *MockDB) GetUserConversationMappings(conversationID int64) ([]*UserConv
 			mappings = append(mappings, mapping)
 		}
 	}
+	sort.Slice(mappings, func(i, j int) bool {
+		return mappings[i].UserID < mappings[j].UserID
+	})
 	return mappings, nil
 }
 
