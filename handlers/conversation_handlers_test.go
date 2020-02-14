@@ -476,6 +476,13 @@ func TestDeleteConversationsHandler(t *testing.T) {
 			if w.Code != test.StatusCode {
 				t.Errorf("Response has incorrect status code, expected status code %d, got %d", test.StatusCode, w.Code)
 			}
+
+			if w.Code == http.StatusNoContent {
+				if mDB.Conversations[conversationID] != nil {
+					// Validate DB function calls
+					t.Error("Didn't properly delete conversation")
+				}
+			}
 		})
 	}
 }

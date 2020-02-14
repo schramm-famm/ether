@@ -1137,6 +1137,13 @@ func TestDeleteMappingHandler(t *testing.T) {
 				t.Errorf("Response has incorrect status code, expected status code %d, got %d", test.StatusCode, w.Code)
 				return
 			}
+
+			if w.Code == http.StatusNoContent {
+				if mDB.GetMapping(memberID, conversationID) != nil {
+					// Validate DB function calls
+					t.Error("Didn't properly delete member")
+				}
+			}
 		})
 	}
 }
