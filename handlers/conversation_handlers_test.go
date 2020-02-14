@@ -82,6 +82,7 @@ func TestPostConversationsHandler(t *testing.T) {
 	}
 
 	var userID int64 = 1
+	var conversationID int64 = 1
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(test.ReqBody)
@@ -114,11 +115,11 @@ func TestPostConversationsHandler(t *testing.T) {
 				}
 
 				// Validate DB function calls
-				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversations[test.ResBody.ID]) {
+				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversations[conversationID]) {
 					t.Errorf(
 						"Used incorrect conversation, expected %+v, got %+v",
 						*test.ResBody,
-						*mDB.Conversations[test.ResBody.ID],
+						*mDB.Conversations[conversationID],
 					)
 				}
 				if mDB.GetMapping(userID, test.ResBody.ID) == nil {
