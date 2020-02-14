@@ -217,13 +217,6 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if *sessionMember.Pending {
-		errMsg := "Cannot modify users in conversation while invitation is pending"
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusForbidden)
-		return
-	}
-
 	var member *models.UserConversationMapping
 	if userID != memberID {
 		member, err = env.getMapping(w, memberID, conversationID, "User not found")
@@ -244,6 +237,18 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	if userID != memberID && *sessionMember.Pending {
+		errMsg := "Cannot modify other users in conversation while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	} else if *sessionMember.Pending && (reqMember.Role != "" || reqMember.Nickname != nil) {
+		errMsg := "Cannot modify self in conversation (besides pending status) while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
 		return
 	}
 
@@ -327,16 +332,16 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if *sessionMember.Pending {
-		errMsg := "Cannot remove users from conversation while invitation is pending"
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusForbidden)
-		return
-	}
-
 	if userID != memberID {
+		if *sessionMember.Pending {
+			errMsg := "Cannot remove other users from conversation while invitation is pending"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusForbidden)
+			return
+		}
+
 		member, err := env.getMapping(w, memberID, conversationID, "User not found")
-		if err != nil || sessionMember == nil {
+		if err != nil || member == nil {
 			return
 		}
 
