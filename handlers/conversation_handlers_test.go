@@ -82,6 +82,7 @@ func TestPostConversationsHandler(t *testing.T) {
 	}
 
 	var userID int64 = 1
+	var conversationID int64 = 1
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(test.ReqBody)
@@ -89,7 +90,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
 			w := httptest.NewRecorder()
 
-			mDB := models.NewMockDB(nil, nil, nil, nil)
+			mDB := models.NewMockDB(nil, nil, nil)
 
 			env := &Env{DB: mDB}
 			env.PostConversationHandler(w, r)
@@ -114,11 +115,15 @@ func TestPostConversationsHandler(t *testing.T) {
 				}
 
 				// Validate DB function calls
-				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversation) {
-					t.Errorf("Used incorrect conversation, expected %+v, got %+v", *test.ResBody, *mDB.Conversation)
+				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversations[conversationID]) {
+					t.Errorf(
+						"Used incorrect conversation, expected %+v, got %+v",
+						*test.ResBody,
+						*mDB.Conversations[conversationID],
+					)
 				}
-				if userID != mDB.UserIDs[0] {
-					t.Errorf("Used incorrect user ID, expected %d, got %d", userID, mDB.UserIDs[0])
+				if mDB.GetMapping(userID, test.ResBody.ID) == nil {
+					t.Errorf("Used incorrect user ID as owner, expected %d", userID)
 				}
 			}
 		})
@@ -175,7 +180,11 @@ func TestGetConversationsHandler(t *testing.T) {
 			})
 			w := httptest.NewRecorder()
 
-			mDB := models.NewMockDB(test.ResBody, test.Mapping, nil, nil)
+			mDB := models.NewMockDB(
+				[]*models.Conversation{test.ResBody},
+				[]*models.UserConversationMapping{test.Mapping},
+				nil,
+			)
 
 			env := &Env{DB: mDB}
 			env.GetConversationHandler(w, r)
@@ -190,20 +199,6 @@ func TestGetConversationsHandler(t *testing.T) {
 				_ = json.NewDecoder(w.Body).Decode(&resBody)
 				if !reflect.DeepEqual(*test.ResBody, resBody) {
 					t.Errorf("Response has incorrect body, expected %+v, got %+v", *test.ResBody, resBody)
-				}
-
-				// Validate DB function calls
-				if userID != mDB.UserIDs[0] {
-					t.Errorf("Used incorrect user ID, expected %d, got %d", userID, mDB.UserIDs[0])
-				}
-				for i := 0; i < 2; i++ {
-					if conversationID != mDB.ConversationIDs[i] {
-						t.Errorf(
-							"Used incorrect conversation ID, expected %d, got %d",
-							conversationID,
-							mDB.ConversationIDs[i],
-						)
-					}
 				}
 			}
 		})
@@ -351,14 +346,19 @@ func TestPatchConversationsHandler(t *testing.T) {
 			})
 			w := httptest.NewRecorder()
 
-			mDB := models.NewMockDB(nil, test.Mapping, nil, nil)
+			mockConversation := make([]*models.Conversation, 0)
 			if test.InitialConversation {
-				mDB.Conversation = &models.Conversation{
-					ID:          1,
+				mockConversation = append(mockConversation, &models.Conversation{
+					ID:          conversationID,
 					Name:        "test_name",
 					Description: utils.StringPtr("test_desc"),
-				}
+				})
 			}
+			mDB := models.NewMockDB(
+				mockConversation,
+				[]*models.UserConversationMapping{test.Mapping},
+				nil,
+			)
 
 			env := &Env{DB: mDB}
 			env.PatchConversationHandler(w, r)
@@ -376,24 +376,12 @@ func TestPatchConversationsHandler(t *testing.T) {
 				}
 
 				// Validate DB function calls
-				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversation) {
+				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversations[conversationID]) {
 					t.Errorf(
 						"Used incorrect conversation patch, expected %+v, got %+v",
 						*test.ResBody,
-						*mDB.Conversation,
+						*mDB.Conversations[conversationID],
 					)
-				}
-				if userID != mDB.UserIDs[0] {
-					t.Errorf("Used incorrect user ID, expected %d, got %d", userID, mDB.UserIDs[0])
-				}
-				for i := 0; i < 2; i++ {
-					if conversationID != mDB.ConversationIDs[i] {
-						t.Errorf(
-							"Used incorrect conversation ID, expected %d, got %d",
-							conversationID,
-							mDB.ConversationIDs[i],
-						)
-					}
 				}
 			}
 		})
@@ -469,14 +457,19 @@ func TestDeleteConversationsHandler(t *testing.T) {
 			})
 			w := httptest.NewRecorder()
 
-			mDB := models.NewMockDB(nil, test.Mapping, nil, nil)
+			mockConversation := make([]*models.Conversation, 0)
 			if test.InitialConversation {
-				mDB.Conversation = &models.Conversation{
-					ID:          1,
+				mockConversation = append(mockConversation, &models.Conversation{
+					ID:          conversationID,
 					Name:        "test_name",
 					Description: utils.StringPtr("test_desc"),
-				}
+				})
 			}
+			mDB := models.NewMockDB(
+				mockConversation,
+				[]*models.UserConversationMapping{test.Mapping},
+				nil,
+			)
 
 			env := &Env{DB: mDB}
 			env.DeleteConversationHandler(w, r)
@@ -486,18 +479,9 @@ func TestDeleteConversationsHandler(t *testing.T) {
 			}
 
 			if w.Code == http.StatusNoContent {
-				// Validate DB function calls
-				if userID != mDB.UserIDs[0] {
-					t.Errorf("Used incorrect user ID, expected %d, got %d", userID, mDB.UserIDs[0])
-				}
-				for i := 0; i < 3; i++ {
-					if conversationID != mDB.ConversationIDs[i] {
-						t.Errorf(
-							"Used incorrect conversation ID, expected %d, got %d",
-							conversationID,
-							mDB.ConversationIDs[i],
-						)
-					}
+				if mDB.Conversations[conversationID] != nil {
+					// Validate DB function calls
+					t.Error("Didn't properly delete conversation")
 				}
 			}
 		})
