@@ -113,7 +113,7 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	memberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	targetMemberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
 		log.Println(errMsg + ": " + err.Error())
@@ -131,18 +131,18 @@ func (env *Env) GetMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var member *models.UserConversationMapping
-	if userID != memberID {
-		member, err = env.getMapping(w, memberID, conversationID, "User not found")
+	var targetMember *models.UserConversationMapping
+	if userID != targetMemberID {
+		targetMember, err = env.getMapping(w, targetMemberID, conversationID, "User not found")
 		if err != nil || sessionMember == nil {
 			return
 		}
 	} else {
-		member = sessionMember
+		targetMember = sessionMember
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(member)
+	json.NewEncoder(w).Encode(targetMember)
 }
 
 // GetMappingsHandler gets all users from a conversation
@@ -199,7 +199,7 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	memberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	targetMemberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
 		log.Println(errMsg + ": " + err.Error())
@@ -217,14 +217,14 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var member *models.UserConversationMapping
-	if userID != memberID {
-		member, err = env.getMapping(w, memberID, conversationID, "User not found")
+	var targetMember *models.UserConversationMapping
+	if userID != targetMemberID {
+		targetMember, err = env.getMapping(w, targetMemberID, conversationID, "User not found")
 		if err != nil || sessionMember == nil {
 			return
 		}
 	} else {
-		member = sessionMember
+		targetMember = sessionMember
 	}
 
 	reqMember := &models.UserConversationMapping{}
@@ -240,7 +240,7 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userID != memberID && *sessionMember.Pending {
+	if userID != targetMemberID && *sessionMember.Pending {
 		errMsg := "Cannot modify other users in conversation while invitation is pending"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusForbidden)
@@ -263,7 +263,7 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(errMsg)
 			http.Error(w, "Forbidden from modifying roles", http.StatusForbidden)
 			return
-		} else if userID == memberID {
+		} else if userID == targetMemberID {
 			errMsg := "Cannot modify own role"
 			log.Println(errMsg)
 			http.Error(w, errMsg, http.StatusForbidden)
@@ -272,12 +272,12 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if reqMember.Pending != nil {
-		if userID != memberID {
+		if userID != targetMemberID {
 			errMsg := "Cannot modify invitation status of other user"
 			log.Println(errMsg)
 			http.Error(w, errMsg, http.StatusForbidden)
 			return
-		} else if !*member.Pending {
+		} else if !*targetMember.Pending {
 			errMsg := "Cannot modify invitation status after accepting invitation"
 			log.Println(errMsg)
 			http.Error(w, errMsg, http.StatusForbidden)
@@ -285,7 +285,7 @@ func (env *Env) PatchMappingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	newMember := member.Merge(reqMember)
+	newMember := targetMember.Merge(reqMember)
 	err = env.DB.UpdateUserConversationMapping(newMember)
 	if err != nil {
 		internalServerError(w, err)
@@ -314,7 +314,7 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
-	memberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
+	targetMemberID, err := strconv.ParseInt(vars["user_id"], 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
 		log.Println(errMsg + ": " + err.Error())
@@ -332,7 +332,7 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userID != memberID {
+	if userID != targetMemberID {
 		if *sessionMember.Pending {
 			errMsg := "Cannot remove other users from conversation while invitation is pending"
 			log.Println(errMsg)
@@ -340,17 +340,22 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		member, err := env.getMapping(w, memberID, conversationID, "User not found")
-		if err != nil || member == nil {
+		targetMember, err := env.getMapping(w, targetMemberID, conversationID, "User not found")
+		if err != nil || targetMember == nil {
 			return
 		}
 
-		res, err := sessionMember.Role.Compare(member.Role)
+		res, err := sessionMember.Role.Compare(targetMember.Role)
 		if err != nil {
 			internalServerError(w, err)
 			return
 		} else if res != 1 {
-			errMsg := fmt.Sprintf("User %d cannot remove user %d from conversation %d", userID, memberID, conversationID)
+			errMsg := fmt.Sprintf(
+				"User %d cannot remove user %d from conversation %d",
+				userID,
+				targetMemberID,
+				conversationID,
+			)
 			log.Println(errMsg)
 			http.Error(w, "Forbidden from removing this user", http.StatusForbidden)
 			return
@@ -362,7 +367,7 @@ func (env *Env) DeleteMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = env.DB.DeleteUserConversationMapping(memberID, conversationID)
+	err = env.DB.DeleteUserConversationMapping(targetMemberID, conversationID)
 	if err != nil {
 		internalServerError(w, err)
 		return
