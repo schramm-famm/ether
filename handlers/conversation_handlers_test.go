@@ -295,7 +295,7 @@ func TestPatchConversationsHandler(t *testing.T) {
 			InitialConversation: true,
 		},
 		{
-			Name:       "Successful conversation modification (pending invitation)",
+			Name:       "Failed conversation modification (pending invitation)",
 			StatusCode: http.StatusForbidden,
 			ReqBody: map[string]interface{}{
 				"name": "test_new_name",
