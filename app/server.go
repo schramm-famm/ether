@@ -28,7 +28,7 @@ func main() {
 		os.Getenv("ETHER_DB_DATABASE"))
 	db, err := models.NewDB(connectionString)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to open database: ", err)
 		return
 	}
 
