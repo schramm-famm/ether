@@ -12,6 +12,7 @@ type Conversation struct {
 	ID          int64   `json:"id"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
+	AvatarURL   *string `json:"avatar_url"`
 }
 
 const (
@@ -35,6 +36,12 @@ func (c *Conversation) Merge(patch *Conversation) *Conversation {
 		newConversation.Description = c.Description
 	}
 
+	if patch.AvatarURL != nil {
+		newConversation.AvatarURL = patch.AvatarURL
+	} else {
+		newConversation.AvatarURL = c.AvatarURL
+	}
+
 	return newConversation
 }
 
@@ -46,9 +53,9 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "INSERT INTO %s(Name, Description) ", conversationsTable)
-	fmt.Fprintf(&b, "VALUES(?, ?)")
-	res, err := tx.Exec(b.String(), conversation.Name, *conversation.Description)
+	fmt.Fprintf(&b, "INSERT INTO %s(Name, Description, AvatarURL) ", conversationsTable)
+	fmt.Fprintf(&b, "VALUES(?, ?, ?)")
+	res, err := tx.Exec(b.String(), conversation.Name, *conversation.Description, *conversation.AvatarURL)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
@@ -94,7 +101,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	conversation := &Conversation{}
 	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ID=?", conversationsTable)
-	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description))
+	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description), &(conversation.AvatarURL))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -107,14 +114,14 @@ func (db *DB) GetConversation(id int64) (*Conversation, error) {
 
 // UpdateConversation updates an existing row in the "conversations" table
 func (db *DB) UpdateConversation(conversation *Conversation) error {
-	if conversation.Name == "" && conversation.Description == nil {
+	if conversation.Name == "" && conversation.Description == nil && conversation.AvatarURL == nil {
 		return nil
 	}
 
 	var b strings.Builder
 	fmt.Fprintf(&b, "UPDATE %s SET ", conversationsTable)
-	fmt.Fprintf(&b, "Name=?, Description=? WHERE ID=?")
-	res, err := db.Exec(b.String(), conversation.Name, *conversation.Description, conversation.ID)
+	fmt.Fprintf(&b, "Name=?, Description=?, AvatarURL=? WHERE ID=?")
+	res, err := db.Exec(b.String(), conversation.Name, *conversation.Description, *conversation.AvatarURL, conversation.ID)
 	if err != nil {
 		return err
 	}

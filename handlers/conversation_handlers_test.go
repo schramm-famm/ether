@@ -28,11 +28,13 @@ func TestPostConversationsHandler(t *testing.T) {
 			ReqBody: map[string]interface{}{
 				"name":        "test_name",
 				"description": "test_desc",
+				"avatar_url":  "test_url",
 			},
 			ResBody: &models.Conversation{
 				ID:          1,
 				Name:        "test_name",
 				Description: utils.StringPtr("test_desc"),
+				AvatarURL:   utils.StringPtr("test_url"),
 			},
 			Location: "/ether/v1/conversations/1",
 		},
@@ -42,11 +44,29 @@ func TestPostConversationsHandler(t *testing.T) {
 			ReqBody: map[string]interface{}{
 				"name":        "test_name",
 				"description": "",
+				"avatar_url":  "test_url",
 			},
 			ResBody: &models.Conversation{
 				ID:          1,
 				Name:        "test_name",
 				Description: utils.StringPtr(""),
+				AvatarURL:   utils.StringPtr("test_url"),
+			},
+			Location: "/ether/v1/conversations/1",
+		},
+		{
+			Name:       "Successful conversation creation (empty avatar url)",
+			StatusCode: http.StatusCreated,
+			ReqBody: map[string]interface{}{
+				"name":        "test_name",
+				"description": "test_desc",
+				"avatar_url":  "",
+			},
+			ResBody: &models.Conversation{
+				ID:          1,
+				Name:        "test_name",
+				Description: utils.StringPtr("test_desc"),
+				AvatarURL:   utils.StringPtr(""),
 			},
 			Location: "/ether/v1/conversations/1",
 		},
@@ -56,6 +76,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ReqBody: map[string]interface{}{
 				"name":        "",
 				"description": "test_desc",
+				"avatar_url":  "test_url",
 			},
 		},
 		{
@@ -64,6 +85,7 @@ func TestPostConversationsHandler(t *testing.T) {
 			ReqBody: map[string]interface{}{
 				"name":        13,
 				"description": "test_desc",
+				"avatar_url":  "test_url",
 			},
 		},
 		{
@@ -72,6 +94,16 @@ func TestPostConversationsHandler(t *testing.T) {
 			ReqBody: map[string]interface{}{
 				"name":        "test_name",
 				"description": 13,
+				"avatar_url":  "test_url",
+			},
+		},
+		{
+			Name:       "Failed conversation creation (wrong avatar type)",
+			StatusCode: http.StatusBadRequest,
+			ReqBody: map[string]interface{}{
+				"name":        "test_name",
+				"description": "test_desc",
+				"avatar_url":  13,
 			},
 		},
 		{
@@ -144,6 +176,7 @@ func TestGetConversationsHandler(t *testing.T) {
 				ID:          1,
 				Name:        "test_name",
 				Description: utils.StringPtr("test_desc"),
+				AvatarURL:   utils.StringPtr("test_url"),
 			},
 			Mapping: &models.UserConversationMapping{
 				UserID:         1,
@@ -165,6 +198,7 @@ func TestGetConversationsHandler(t *testing.T) {
 				ID:          1,
 				Name:        "test_name",
 				Description: utils.StringPtr("test_desc"),
+				AvatarURL:   utils.StringPtr("test_url"),
 			},
 		},
 	}
@@ -220,11 +254,13 @@ func TestPatchConversationsHandler(t *testing.T) {
 			ReqBody: map[string]interface{}{
 				"name":        "test_new_name",
 				"description": "test_new_desc",
+				"avatar_url":  "test_new_avatar",
 			},
 			ResBody: &models.Conversation{
 				ID:          1,
 				Name:        "test_new_name",
 				Description: utils.StringPtr("test_new_desc"),
+				AvatarURL:   utils.StringPtr("test_new_avatar"),
 			},
 			Mapping: &models.UserConversationMapping{
 				UserID:         1,
@@ -246,6 +282,7 @@ func TestPatchConversationsHandler(t *testing.T) {
 				ID:          1,
 				Name:        "test_new_name",
 				Description: utils.StringPtr("test_desc"),
+				AvatarURL:   utils.StringPtr("test_avatar"),
 			},
 			Mapping: &models.UserConversationMapping{
 				UserID:         1,
@@ -267,6 +304,29 @@ func TestPatchConversationsHandler(t *testing.T) {
 				ID:          1,
 				Name:        "test_name",
 				Description: utils.StringPtr("test_new_desc"),
+				AvatarURL:   utils.StringPtr("test_avatar"),
+			},
+			Mapping: &models.UserConversationMapping{
+				UserID:         1,
+				ConversationID: 1,
+				Role:           "owner",
+				Nickname:       utils.StringPtr(""),
+				Pending:        utils.BoolPtr(false),
+				LastOpened:     "2006-01-02 15:04:05",
+			},
+			InitialConversation: true,
+		},
+		{
+			Name:       "Successful conversation modification (just avatar)",
+			StatusCode: http.StatusOK,
+			ReqBody: map[string]interface{}{
+				"avatar_url": "test_new_avatar",
+			},
+			ResBody: &models.Conversation{
+				ID:          1,
+				Name:        "test_name",
+				Description: utils.StringPtr("test_desc"),
+				AvatarURL:   utils.StringPtr("test_new_avatar"),
 			},
 			Mapping: &models.UserConversationMapping{
 				UserID:         1,
@@ -327,6 +387,14 @@ func TestPatchConversationsHandler(t *testing.T) {
 			InitialConversation: true,
 		},
 		{
+			Name:       "Failed conversation modification (wrong avatar type)",
+			StatusCode: http.StatusBadRequest,
+			ReqBody: map[string]interface{}{
+				"avatar_url": 13,
+			},
+			InitialConversation: true,
+		},
+		{
 			Name:                "Failed conversation modification (empty JSON)",
 			StatusCode:          http.StatusBadRequest,
 			ReqBody:             map[string]interface{}{},
@@ -352,6 +420,7 @@ func TestPatchConversationsHandler(t *testing.T) {
 					ID:          conversationID,
 					Name:        "test_name",
 					Description: utils.StringPtr("test_desc"),
+					AvatarURL:   utils.StringPtr("test_avatar"),
 				})
 			}
 			mDB := models.NewMockDB(
