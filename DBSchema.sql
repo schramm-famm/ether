@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     ID INTEGER NOT NULL AUTO_INCREMENT,
     Name VARCHAR(255),
     Description VARCHAR(255),
+    AvatarURL VARCHAR(255),
     PRIMARY KEY(ID)
 );
 
