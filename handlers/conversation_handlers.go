@@ -50,6 +50,39 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(reqConversation)
 }
 
+// GetUsersConversationsHandler returns all of a user's conversations
+func (env *Env) GetUsersConversationsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
+	if err != nil {
+		errMsg := "Invalid user ID"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	sort := r.URL.Query().Get("sort_by")
+	if sort != "" && sort != "asc" && sort != "desc" {
+		errMsg := "Invalid sorting keyword"
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	conversations, err := env.DB.GetUsersConversations(userID, sort)
+	if err != nil || conversations == nil {
+		internalServerError(w, err)
+		return
+	} else if len(conversations) == 0 {
+		errMsg := fmt.Sprintf("User is not in any conversations")
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusNotFound)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(conversations)
+
+}
+
 // GetConversationHandler gets a single conversation
 func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)

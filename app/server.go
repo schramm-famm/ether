@@ -42,6 +42,10 @@ func main() {
 		env.PostConversationHandler,
 	).Methods("POST")
 	httpMux.HandleFunc(
+		"/ether/v1/conversations",
+		env.GetUsersConversationsHandler,
+	).Methods("GET")
+	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
 		env.GetConversationHandler,
 	).Methods("GET")

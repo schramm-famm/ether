@@ -100,7 +100,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 // GetConversation queries for a single row from the "conversations" table
 func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	conversation := &Conversation{}
-	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ID=?", conversationsTable)
+	queryString := fmt.Sprintf("SELECT ID, Name, Description, AvatarURL FROM %s WHERE ID=?", conversationsTable)
 	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description), &(conversation.AvatarURL))
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -110,6 +110,41 @@ func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	}
 	log.Printf(`Read 1 row from "%s"`, conversationsTable)
 	return conversation, nil
+}
+
+// GetUsersConversations returns all conversations of a user
+func (db *DB) GetUsersConversations(userID int64, sort string) ([]Conversation, error) {
+	var queryString strings.Builder
+	fmt.Fprintf(&queryString, "SELECT c.ID, c.Name, c.Description, c.AvatarURL ")
+	fmt.Fprintf(&queryString, "FROM %s AS c JOIN %s AS m ON c.ID = m.ConversationID ", conversationsTable, mappingsTable)
+	fmt.Fprintf(&queryString, "WHERE UserID=? ORDER BY m.ConversationID ")
+	if sort == "desc" {
+		fmt.Fprintf(&queryString, sort)
+	}
+	rows, err := db.Query(queryString.String(), userID)
+
+	if err != nil {
+		log.Printf("err")
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Create list of conversations
+	c := Conversation{}
+	conversations := make([]Conversation, 0)
+	for rows.Next() {
+		err := rows.Scan(&c.ID, &c.Name, &c.Description, &c.AvatarURL)
+		if err != nil {
+			log.Printf("err 2")
+			return nil, err
+		}
+		conversations = append(conversations, c)
+	}
+
+	if rowCount := len(conversations); err == nil {
+		log.Printf("Read %d row(s)", rowCount)
+	}
+	return conversations, err
 }
 
 // UpdateConversation updates an existing row in the "conversations" table

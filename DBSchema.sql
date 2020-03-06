@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     Name VARCHAR(255),
     Description VARCHAR(255),
     AvatarURL VARCHAR(255),
+    LastModified TIMESTAMP,
     PRIMARY KEY(ID)
 );
 
