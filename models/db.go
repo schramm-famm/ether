@@ -11,7 +11,7 @@ import (
 type Datastore interface {
 	CreateConversation(conversation *Conversation, creatorID int64) (int64, error)
 	GetConversation(id int64) (*Conversation, error)
-	GetUsersConversations(userID int64, sort string) ([]Conversation, error)
+	GetConversations(userID int64, sort string) ([]Conversation, error)
 	UpdateConversation(conversation *Conversation) error
 	DeleteConversation(id int64) error
 

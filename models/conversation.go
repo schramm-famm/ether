@@ -9,10 +9,11 @@ import (
 
 // Conversation represents a conversation with one or more users
 type Conversation struct {
-	ID          int64   `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	AvatarURL   *string `json:"avatar_url"`
+	ID           int64   `json:"id"`
+	Name         string  `json:"name"`
+	Description  *string `json:"description"`
+	AvatarURL    *string `json:"avatar_url"`
+	LastModified string  `json:"last_modified"`
 }
 
 const (
@@ -100,8 +101,8 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 // GetConversation queries for a single row from the "conversations" table
 func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	conversation := &Conversation{}
-	queryString := fmt.Sprintf("SELECT ID, Name, Description, AvatarURL FROM %s WHERE ID=?", conversationsTable)
-	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description), &(conversation.AvatarURL))
+	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ID=?", conversationsTable)
+	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description), &(conversation.AvatarURL), &(conversation.LastModified))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -112,19 +113,18 @@ func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	return conversation, nil
 }
 
-// GetUsersConversations returns all conversations of a user
-func (db *DB) GetUsersConversations(userID int64, sort string) ([]Conversation, error) {
+// GetConversations returns all conversations of a user
+func (db *DB) GetConversations(userID int64, sort string) ([]Conversation, error) {
 	var queryString strings.Builder
-	fmt.Fprintf(&queryString, "SELECT c.ID, c.Name, c.Description, c.AvatarURL ")
+	fmt.Fprintf(&queryString, "SELECT c.ID, c.Name, c.Description, c.AvatarURL, c.LastModified ")
 	fmt.Fprintf(&queryString, "FROM %s AS c JOIN %s AS m ON c.ID = m.ConversationID ", conversationsTable, mappingsTable)
-	fmt.Fprintf(&queryString, "WHERE UserID=? ORDER BY m.ConversationID ")
-	if sort == "desc" {
-		fmt.Fprintf(&queryString, sort)
+	fmt.Fprintf(&queryString, "WHERE UserID=? ORDER BY c.LastModified ")
+	if sort == "desc" || sort == "" {
+		fmt.Fprintf(&queryString, "DESC")
 	}
 	rows, err := db.Query(queryString.String(), userID)
 
 	if err != nil {
-		log.Printf("err")
 		return nil, err
 	}
 	defer rows.Close()
@@ -133,17 +133,14 @@ func (db *DB) GetUsersConversations(userID int64, sort string) ([]Conversation, 
 	c := Conversation{}
 	conversations := make([]Conversation, 0)
 	for rows.Next() {
-		err := rows.Scan(&c.ID, &c.Name, &c.Description, &c.AvatarURL)
+		err := rows.Scan(&c.ID, &c.Name, &c.Description, &c.AvatarURL, &c.LastModified)
 		if err != nil {
-			log.Printf("err 2")
 			return nil, err
 		}
 		conversations = append(conversations, c)
 	}
 
-	if rowCount := len(conversations); err == nil {
-		log.Printf("Read %d row(s)", rowCount)
-	}
+	log.Printf("Read %d row(s)", len(conversations))
 	return conversations, err
 }
 

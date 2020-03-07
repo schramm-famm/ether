@@ -83,7 +83,7 @@ func (db *MockDB) GetConversation(id int64) (*Conversation, error) {
 	return db.Conversations[id], nil
 }
 
-func (db *MockDB) GetUsersConversations(id int64, sortBy string) ([]Conversation, error) {
+func (db *MockDB) GetConversations(id int64, sortBy string) ([]Conversation, error) {
 	if err := db.getError(); err != nil {
 		return nil, err
 	}

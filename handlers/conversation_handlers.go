@@ -50,8 +50,8 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(reqConversation)
 }
 
-// GetUsersConversationsHandler returns all of a user's conversations
-func (env *Env) GetUsersConversationsHandler(w http.ResponseWriter, r *http.Request) {
+// GetConversationsHandler returns all of a user's conversations
+func (env *Env) GetConversationsHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.ParseInt(r.Header.Get("User-ID"), 10, 64)
 	if err != nil {
 		errMsg := "Invalid user ID"
@@ -67,19 +67,15 @@ func (env *Env) GetUsersConversationsHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	conversations, err := env.DB.GetUsersConversations(userID, sort)
+	conversations, err := env.DB.GetConversations(userID, sort)
 	if err != nil || conversations == nil {
 		internalServerError(w, err)
-		return
-	} else if len(conversations) == 0 {
-		errMsg := fmt.Sprintf("User is not in any conversations")
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusNotFound)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conversations)
+	response := map[string][]models.Conversation{"conversations": conversations}
+	json.NewEncoder(w).Encode(response)
 
 }
 

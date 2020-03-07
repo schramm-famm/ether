@@ -243,39 +243,44 @@ func TestGetUsersConversationsHandler(t *testing.T) {
 	tests := []struct {
 		Name          string
 		StatusCode    int
-		ResBody       []*models.Conversation
+		ResBody       map[string][]*models.Conversation
 		Conversations []*models.Conversation
 		Mapping       []*models.UserConversationMapping
 	}{
 		{
 			Name:       "Successful user's conversations retrieval",
 			StatusCode: http.StatusOK,
-			ResBody: []*models.Conversation{
+			ResBody: map[string][]*models.Conversation{"conversations": []*models.Conversation{
 				&models.Conversation{
-					ID:          2,
-					Name:        "test_name",
-					Description: utils.StringPtr("test_desc"),
-					AvatarURL:   utils.StringPtr("test_url"),
+					ID:           2,
+					Name:         "test_name",
+					Description:  utils.StringPtr("test_desc"),
+					AvatarURL:    utils.StringPtr("test_url"),
+					LastModified: "2006-01-02 15:04:05",
 				},
 				&models.Conversation{
-					ID:          1,
-					Name:        "test_name",
-					Description: utils.StringPtr("test_desc"),
-					AvatarURL:   utils.StringPtr("test_url"),
+					ID:           1,
+					Name:         "test_name",
+					Description:  utils.StringPtr("test_desc"),
+					AvatarURL:    utils.StringPtr("test_url"),
+					LastModified: "2006-01-02 15:04:06",
 				},
+			},
 			},
 			Conversations: []*models.Conversation{
 				&models.Conversation{
-					ID:          1,
-					Name:        "test_name",
-					Description: utils.StringPtr("test_desc"),
-					AvatarURL:   utils.StringPtr("test_url"),
+					ID:           1,
+					Name:         "test_name",
+					Description:  utils.StringPtr("test_desc"),
+					AvatarURL:    utils.StringPtr("test_url"),
+					LastModified: "2006-01-02 15:04:06",
 				},
 				&models.Conversation{
-					ID:          2,
-					Name:        "test_name",
-					Description: utils.StringPtr("test_desc"),
-					AvatarURL:   utils.StringPtr("test_url"),
+					ID:           2,
+					Name:         "test_name",
+					Description:  utils.StringPtr("test_desc"),
+					AvatarURL:    utils.StringPtr("test_url"),
+					LastModified: "2006-01-02 15:04:05",
 				},
 			},
 			Mapping: []*models.UserConversationMapping{
@@ -318,7 +323,7 @@ func TestGetUsersConversationsHandler(t *testing.T) {
 			)
 
 			env := &Env{DB: mDB}
-			env.GetUsersConversationsHandler(w, r)
+			env.GetConversationsHandler(w, r)
 
 			if w.Code != test.StatusCode {
 				t.Errorf("Response has incorrect status code, expected status code %d, got %d", test.StatusCode, w.Code)
@@ -326,11 +331,13 @@ func TestGetUsersConversationsHandler(t *testing.T) {
 
 			if w.Code == http.StatusOK {
 				// Validate HTTP response content
-				resBody := []*models.Conversation{}
+				resBody := map[string][]*models.Conversation{}
 				_ = json.NewDecoder(w.Body).Decode(&resBody)
-				for i := range test.ResBody {
-					if !reflect.DeepEqual(*test.ResBody[i], *resBody[i]) {
-						t.Errorf("Response has incorrect body, expected %+v, got %+v", *test.ResBody[i], *resBody[i])
+				var testConversations []*models.Conversation = test.ResBody["conversations"]
+				var resConversations []*models.Conversation = resBody["conversations"]
+				for i := range testConversations {
+					if !reflect.DeepEqual(*testConversations[i], *resConversations[i]) {
+						t.Errorf("Response has incorrect body, expected %+v, got %+v", *testConversations[i], *resConversations[i])
 					}
 				}
 			}
