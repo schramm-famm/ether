@@ -9,10 +9,11 @@ import (
 
 // Conversation represents a conversation with one or more users
 type Conversation struct {
-	ID          int64   `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	AvatarURL   *string `json:"avatar_url"`
+	ID           int64   `json:"id"`
+	Name         string  `json:"name"`
+	Description  *string `json:"description"`
+	AvatarURL    *string `json:"avatar_url"`
+	LastModified string  `json:"last_modified"`
 }
 
 const (
@@ -101,7 +102,7 @@ func (db *DB) CreateConversation(conversation *Conversation, creatorID int64) (i
 func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	conversation := &Conversation{}
 	queryString := fmt.Sprintf("SELECT * FROM %s WHERE ID=?", conversationsTable)
-	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description), &(conversation.AvatarURL))
+	err := db.QueryRow(queryString, id).Scan(&(conversation.ID), &(conversation.Name), &(conversation.Description), &(conversation.AvatarURL), &(conversation.LastModified))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -110,6 +111,37 @@ func (db *DB) GetConversation(id int64) (*Conversation, error) {
 	}
 	log.Printf(`Read 1 row from "%s"`, conversationsTable)
 	return conversation, nil
+}
+
+// GetConversations returns all conversations of a user
+func (db *DB) GetConversations(userID int64, sort string) ([]Conversation, error) {
+	var queryString strings.Builder
+	fmt.Fprintf(&queryString, "SELECT c.ID, c.Name, c.Description, c.AvatarURL, c.LastModified ")
+	fmt.Fprintf(&queryString, "FROM %s AS c JOIN %s AS m ON c.ID = m.ConversationID ", conversationsTable, mappingsTable)
+	fmt.Fprintf(&queryString, "WHERE UserID=? ORDER BY c.LastModified ")
+	if sort == "desc" || sort == "" {
+		fmt.Fprintf(&queryString, "DESC")
+	}
+	rows, err := db.Query(queryString.String(), userID)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Create list of conversations
+	c := Conversation{}
+	conversations := make([]Conversation, 0)
+	for rows.Next() {
+		err := rows.Scan(&c.ID, &c.Name, &c.Description, &c.AvatarURL, &c.LastModified)
+		if err != nil {
+			return nil, err
+		}
+		conversations = append(conversations, c)
+	}
+
+	log.Printf("Read %d row(s)", len(conversations))
+	return conversations, err
 }
 
 // UpdateConversation updates an existing row in the "conversations" table

@@ -83,6 +83,27 @@ func (db *MockDB) GetConversation(id int64) (*Conversation, error) {
 	return db.Conversations[id], nil
 }
 
+func (db *MockDB) GetConversations(id int64, sortBy string) ([]Conversation, error) {
+	if err := db.getError(); err != nil {
+		return nil, err
+	}
+
+	var m = db.Mappings
+	var usersConversations []Conversation
+	for c, umap := range m {
+		for u := range umap {
+			if u == id {
+				usersConversations = append(usersConversations, *db.Conversations[c])
+			}
+		}
+	}
+
+	if sortBy == "desc" {
+		sort.Slice(usersConversations, func(i, j int) bool { return usersConversations[i].ID > usersConversations[j].ID })
+	}
+	return usersConversations, nil
+}
+
 func (db *MockDB) UpdateConversation(conversation *Conversation) error {
 	if err := db.getError(); err != nil {
 		return err
