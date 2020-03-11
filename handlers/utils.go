@@ -8,6 +8,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+)
+
+var (
+	contentDir = os.Getenv("ETHER_CONTENT_DIR")
 )
 
 // Env represents all application-level items that are needed by handlers
