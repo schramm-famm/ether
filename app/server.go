@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ether/filesystem"
 	"ether/handlers"
 	"ether/models"
 	"fmt"
@@ -32,7 +33,11 @@ func main() {
 		return
 	}
 
-	env := &handlers.Env{db}
+	directory := filesystem.NewDirectory(os.Getenv("ETHER_CONTENT_DIR"))
+	env := &handlers.Env{
+		DB:        db,
+		Directory: directory,
+	}
 
 	httpMux := mux.NewRouter()
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"ether/filesystem"
 	"ether/models"
 	"ether/utils"
 	"fmt"
@@ -78,12 +79,14 @@ func TestGetContentHandler(t *testing.T) {
 
 	var userID int64 = 1
 	var conversationID int64 = 1
-	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
-	f, _ := os.Create(filePath)
-	f.WriteString("hello world")
-	f.Close()
+	var contentDir = os.Getenv("ETHER_CONTENT_DIR")
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+			f, _ := os.Create(filePath)
+			f.WriteString(test.Content)
+			f.Close()
+
 			r := httptest.NewRequest("GET", "/ether/v1/conversations/1/content", nil)
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
 			r = mux.SetURLVars(r, map[string]string{
@@ -97,7 +100,10 @@ func TestGetContentHandler(t *testing.T) {
 				nil,
 			)
 
-			env := &Env{DB: mDB}
+			env := &Env{
+				DB:        mDB,
+				Directory: filesystem.NewDirectory(contentDir),
+			}
 			env.GetContentHandler(w, r)
 
 			if w.Code != test.StatusCode {
@@ -112,7 +118,8 @@ func TestGetContentHandler(t *testing.T) {
 					t.Errorf("Response has incorrect body, expected %q, got %q", test.Content, resContent)
 				}
 			}
+
+			os.Remove(filePath)
 		})
 	}
-	os.Remove(filePath)
 }

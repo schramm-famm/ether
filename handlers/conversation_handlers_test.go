@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"ether/filesystem"
 	"ether/models"
 	"ether/utils"
 	"fmt"
@@ -132,8 +133,11 @@ func TestPostConversationsHandler(t *testing.T) {
 
 	var userID int64 = 1
 	var conversationID int64 = 1
+	var contentDir = os.Getenv("ETHER_CONTENT_DIR")
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+
 			reqBody, _ := json.Marshal(test.ReqBody)
 			r := httptest.NewRequest("POST", "/ether/v1/conversations", bytes.NewReader(reqBody))
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
@@ -141,14 +145,16 @@ func TestPostConversationsHandler(t *testing.T) {
 
 			mDB := models.NewMockDB(nil, nil, nil)
 
-			env := &Env{DB: mDB}
+			env := &Env{
+				DB:        mDB,
+				Directory: filesystem.NewDirectory(contentDir),
+			}
 			env.PostConversationHandler(w, r)
 
 			if w.Code != test.StatusCode {
 				t.Errorf("Response has incorrect status code, expected status code %d, got %d", test.StatusCode, w.Code)
 			}
 
-			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
 			if w.Code == http.StatusCreated {
 				// Validate HTTP response content
 				resBody := models.Conversation{}
@@ -648,6 +654,7 @@ func TestDeleteConversationsHandler(t *testing.T) {
 
 	var userID int64 = 1
 	var conversationID int64 = 1
+	var contentDir = os.Getenv("ETHER_CONTENT_DIR")
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
@@ -675,7 +682,10 @@ func TestDeleteConversationsHandler(t *testing.T) {
 				nil,
 			)
 
-			env := &Env{DB: mDB}
+			env := &Env{
+				DB:        mDB,
+				Directory: filesystem.NewDirectory(contentDir),
+			}
 			env.DeleteConversationHandler(w, r)
 
 			if w.Code != test.StatusCode {

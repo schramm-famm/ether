@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"path"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -50,13 +48,10 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
-	file, err := os.Create(filePath)
-	if err != nil {
+	if env.Directory.Create(conversationID); err != nil {
 		internalServerError(w, err)
 		return
 	}
-	file.Close()
 
 	reqConversation.ID = conversationID
 	location := fmt.Sprintf("%s/%d", r.URL.Path, conversationID)
@@ -164,8 +159,7 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
-	if err := os.Remove(filePath); err != nil {
+	if err := env.Directory.Remove(conversationID); err != nil {
 		internalServerError(w, err)
 		return
 	}

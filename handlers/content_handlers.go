@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -48,8 +46,8 @@ func (env *Env) GetContentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	data, err := env.Directory.ReadFile(conversationID)
+	if os.IsNotExist(err) {
 		errMsg := fmt.Sprintf("File for conversation %d does not exist", conversationID)
 		log.Println(errMsg)
 		http.Error(w, "File not found", http.StatusNotFound)
@@ -59,7 +57,6 @@ func (env *Env) GetContentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := ioutil.ReadFile(filePath)
 	w.Header().Add("Content-Type", "text/html")
 	w.Write(data)
 }
