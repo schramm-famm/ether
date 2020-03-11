@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"ether/models"
 	"ether/utils"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"reflect"
 	"strconv"
 	"testing"
@@ -131,6 +134,7 @@ func TestPostConversationsHandler(t *testing.T) {
 				t.Errorf("Response has incorrect status code, expected status code %d, got %d", test.StatusCode, w.Code)
 			}
 
+			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
 			if w.Code == http.StatusCreated {
 				// Validate HTTP response content
 				resBody := models.Conversation{}
@@ -146,6 +150,11 @@ func TestPostConversationsHandler(t *testing.T) {
 					)
 				}
 
+				// Validate that file was created
+				if _, err := os.Stat(filePath); err != nil {
+					t.Errorf("No file at expected location: %s", filePath)
+				}
+
 				// Validate DB function calls
 				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversations[conversationID]) {
 					t.Errorf(
@@ -158,6 +167,8 @@ func TestPostConversationsHandler(t *testing.T) {
 					t.Errorf("Used incorrect user ID as owner, expected %d", userID)
 				}
 			}
+
+			os.Remove(filePath)
 		})
 	}
 }
@@ -625,6 +636,10 @@ func TestDeleteConversationsHandler(t *testing.T) {
 	var conversationID int64 = 1
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+			f, _ := os.Create(filePath)
+			f.Close()
+
 			r := httptest.NewRequest("DELETE", "/ether/v1/conversations/1", nil)
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
 			r = mux.SetURLVars(r, map[string]string{
@@ -657,6 +672,11 @@ func TestDeleteConversationsHandler(t *testing.T) {
 				if mDB.Conversations[conversationID] != nil {
 					// Validate DB function calls
 					t.Error("Didn't properly delete conversation")
+
+					// Validate that file was deleted
+					if _, err := os.Stat(filePath); os.IsNotExist(err) {
+						t.Errorf("File still exists at location: %s", filePath)
+					}
 				}
 			}
 		})
