@@ -24,8 +24,9 @@ Creates a new conversation with just the session user as an owner member.
 #### Request body format
 ```
 {
-    "Name": "Friends",
-    "Description": "Casual banter"
+    "name": "Friends",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -33,9 +34,10 @@ Creates a new conversation with just the session user as an owner member.
 `201 Created`
 ```
 {
-    "ID": 1
-    "Name": "Friends",
-    "Description": "Casual banter"
+    "id": 1
+    "name": "Friends",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -45,9 +47,10 @@ Retrieves a conversation's metadata.
 `200 OK`
 ```
 {
-    "ID": 1
-    "Name": "Friends",
-    "Description": "Casual banter"
+    "id": 1
+    "name": "Friends",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -58,8 +61,9 @@ Updates a conversation's metadata.
 #### Request body format
 ```
 {
-    "Name": "Acquintances...",
-    "Description": "Casual banter"
+    "name": "Acquintances...",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -67,9 +71,10 @@ Updates a conversation's metadata.
 `200 OK`
 ```
 {
-    "ID": 1
-    "Name": "Acquintances...",
-    "Description": "Casual banter"
+    "id": 1
+    "name": "Acquintances...",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -113,7 +118,7 @@ Adds a member to a conversation.
     "role": "user",
     "nickname": "",
     "pending": true,
-    "last_opened": "2020-02-19 18:32:00",
+    "last_opened": "2020-02-19 18:32:00"
 }
 ```
 
@@ -130,7 +135,7 @@ Retrieves a conversation member.
     "role": "user",
     "nickname": "",
     "pending": true,
-    "last_opened": "2020-02-19 18:32:00",
+    "last_opened": "2020-02-19 18:32:00"
 }
 ```
 
@@ -149,7 +154,7 @@ Retrieves all of a conversation's member.
             "role": "owner",
             "nickname": "",
             "pending": false,
-            "last_opened": "2020-02-19 18:39:00",
+            "last_opened": "2020-02-19 18:39:00"
         },
         {
             "user_id": 1,
@@ -157,7 +162,7 @@ Retrieves all of a conversation's member.
             "role": "user",
             "nickname": "",
             "pending": true,
-            "last_opened": "2020-02-19 18:32:00",
+            "last_opened": "2020-02-19 18:32:00"
         }
     ]
 }
@@ -173,7 +178,7 @@ Updates a member in a conversation.
     "user_id": 3,
     "conversation_id": 1,
     "role": "admin",
-    "nickname": "An alright guy",
+    "nickname": "An alright guy"
 }
 ```
 
@@ -186,7 +191,7 @@ Updates a member in a conversation.
     "role": "admin",
     "nickname": "An alright guy",
     "pending": false,
-    "last_opened": "2020-02-19 18:44:00",
+    "last_opened": "2020-02-19 18:44:00"
 }
 ```
 
