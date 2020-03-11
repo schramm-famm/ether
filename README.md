@@ -9,6 +9,7 @@ file system.
 * `ETHER_DB_PASSWORD`: password for accessing MariaDB
 * `ETHER_DB_LOCATION`: host and port where MariaDB is located (ex: "localhost:3306")
 * `ETHER_DB_DATABASE`: name of the database to use in MariaDB
+* `ETHER_DB_CONTENT_DIR`: directory where conversation content HTML files are stored
 
 ## API Documentation
 The following APIs are protected by `heimdall`, so requests must have the
@@ -78,6 +79,17 @@ Notable error codes: `403 Forbidden`, `404 Not Found`
 Deletes a conversation.
 #### Response format
 `204 No Content`
+
+Notable error codes: `403 Forbidden`, `404 Not Found`
+
+### `GET /ether/v1/conversations/{conversation_id}/content`
+Retrieve's a conversation's content.
+### Response format
+`200 OK`
+```
+<div>hello world!</div>
+<div>sup</div>
+```
 
 Notable error codes: `403 Forbidden`, `404 Not Found`
 
