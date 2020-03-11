@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -27,7 +29,7 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if reqConversation.Name == "" || reqConversation.Description == nil {
+	if reqConversation.Name == "" || reqConversation.Description == nil || reqConversation.AvatarURL == nil {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
@@ -40,7 +42,13 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// TODO: Create HTML file
+	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+	file, err := os.Create(filePath)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	file.Close()
 
 	reqConversation.ID = conversationID
 	location := fmt.Sprintf("%s/%d", r.URL.Path, conversationID)
@@ -108,9 +116,6 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Get conversation HTML
-	// TODO: Get conversation picture
-
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
 }
@@ -151,6 +156,12 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+	if err := os.Remove(filePath); err != nil {
+		internalServerError(w, err)
+		return
+	}
+
 	err = env.DB.DeleteConversation(conversationID)
 	if err != nil {
 		internalServerError(w, err)
@@ -177,7 +188,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if reqConversation.Name == "" && reqConversation.Description == nil && reqConversation.AvatarURL == nil {
-		errMsg := `Request body has neither "name" nor "description"`
+		errMsg := `Request body must have one of "name", "description", or "avatar_url"`
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
