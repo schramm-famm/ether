@@ -74,6 +74,20 @@ func TestPostConversationsHandler(t *testing.T) {
 			Location: "/ether/v1/conversations/1",
 		},
 		{
+			Name:       "Successful conversation creation (only name)",
+			StatusCode: http.StatusCreated,
+			ReqBody: map[string]interface{}{
+				"name": "test_name",
+			},
+			ResBody: &models.Conversation{
+				ID:          1,
+				Name:        "test_name",
+				Description: utils.StringPtr(""),
+				AvatarURL:   utils.StringPtr(""),
+			},
+			Location: "/ether/v1/conversations/1",
+		},
+		{
 			Name:       "Failed conversation creation (empty name)",
 			StatusCode: http.StatusBadRequest,
 			ReqBody: map[string]interface{}{
