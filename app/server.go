@@ -58,6 +58,12 @@ func main() {
 		env.DeleteConversationHandler,
 	).Methods("DELETE")
 
+	// Conversation Content read
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/content",
+		env.GetContentHandler,
+	).Methods("GET")
+
 	// User-Conversation Mapping CRUD
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
