@@ -41,6 +41,13 @@ func (env *Env) GetContentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if *sessionMember.Pending {
+		errMsg := "Cannot get conversation content while invitation is pending"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusForbidden)
+		return
+	}
+
 	filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		errMsg := fmt.Sprintf("File for conversation %d does not exist", conversationID)
