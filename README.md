@@ -9,6 +9,7 @@ file system.
 * `ETHER_DB_PASSWORD`: password for accessing MariaDB
 * `ETHER_DB_LOCATION`: host and port where MariaDB is located (ex: "localhost:3306")
 * `ETHER_DB_DATABASE`: name of the database to use in MariaDB
+* `ETHER_DB_CONTENT_DIR`: directory where conversation content HTML files are stored
 
 ## API Documentation
 The following APIs are protected by `heimdall`, so requests must have the
@@ -23,8 +24,9 @@ Creates a new conversation with just the session user as an owner member.
 #### Request body format
 ```
 {
-    "Name": "Friends",
-    "Description": "Casual banter"
+    "name": "Friends",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -32,9 +34,10 @@ Creates a new conversation with just the session user as an owner member.
 `201 Created`
 ```
 {
-    "ID": 1
-    "Name": "Friends",
-    "Description": "Casual banter"
+    "id": 1
+    "name": "Friends",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -44,9 +47,10 @@ Retrieves a conversation's metadata.
 `200 OK`
 ```
 {
-    "ID": 1
-    "Name": "Friends",
-    "Description": "Casual banter"
+    "id": 1
+    "name": "Friends",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -57,8 +61,9 @@ Updates a conversation's metadata.
 #### Request body format
 ```
 {
-    "Name": "Acquintances...",
-    "Description": "Casual banter"
+    "name": "Acquintances...",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -66,9 +71,10 @@ Updates a conversation's metadata.
 `200 OK`
 ```
 {
-    "ID": 1
-    "Name": "Acquintances...",
-    "Description": "Casual banter"
+    "id": 1
+    "name": "Acquintances...",
+    "description": "Casual banter",
+    "avatar_url": "example.com/image.png"
 }
 ```
 
@@ -78,6 +84,17 @@ Notable error codes: `403 Forbidden`, `404 Not Found`
 Deletes a conversation.
 #### Response format
 `204 No Content`
+
+Notable error codes: `403 Forbidden`, `404 Not Found`
+
+### `GET /ether/v1/conversations/{conversation_id}/content`
+Retrieve's a conversation's content.
+### Response format
+`200 OK`
+```
+<div>hello world!</div>
+<div>sup</div>
+```
 
 Notable error codes: `403 Forbidden`, `404 Not Found`
 
@@ -101,7 +118,7 @@ Adds a member to a conversation.
     "role": "user",
     "nickname": "",
     "pending": true,
-    "last_opened": "2020-02-19 18:32:00",
+    "last_opened": "2020-02-19 18:32:00"
 }
 ```
 
@@ -118,7 +135,7 @@ Retrieves a conversation member.
     "role": "user",
     "nickname": "",
     "pending": true,
-    "last_opened": "2020-02-19 18:32:00",
+    "last_opened": "2020-02-19 18:32:00"
 }
 ```
 
@@ -137,7 +154,7 @@ Retrieves all of a conversation's member.
             "role": "owner",
             "nickname": "",
             "pending": false,
-            "last_opened": "2020-02-19 18:39:00",
+            "last_opened": "2020-02-19 18:39:00"
         },
         {
             "user_id": 1,
@@ -145,7 +162,7 @@ Retrieves all of a conversation's member.
             "role": "user",
             "nickname": "",
             "pending": true,
-            "last_opened": "2020-02-19 18:32:00",
+            "last_opened": "2020-02-19 18:32:00"
         }
     ]
 }
@@ -161,7 +178,7 @@ Updates a member in a conversation.
     "user_id": 3,
     "conversation_id": 1,
     "role": "admin",
-    "nickname": "An alright guy",
+    "nickname": "An alright guy"
 }
 ```
 
@@ -174,7 +191,7 @@ Updates a member in a conversation.
     "role": "admin",
     "nickname": "An alright guy",
     "pending": false,
-    "last_opened": "2020-02-19 18:44:00",
+    "last_opened": "2020-02-19 18:44:00"
 }
 ```
 

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"ether/filesystem"
 	"ether/models"
 	"fmt"
 	"io"
@@ -12,7 +13,8 @@ import (
 
 // Env represents all application-level items that are needed by handlers
 type Env struct {
-	DB models.Datastore
+	DB        models.Datastore
+	Directory *filesystem.Directory
 }
 
 func internalServerError(w http.ResponseWriter, err error) {

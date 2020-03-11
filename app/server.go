@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ether/filesystem"
 	"ether/handlers"
 	"ether/models"
 	"fmt"
@@ -32,7 +33,11 @@ func main() {
 		return
 	}
 
-	env := &handlers.Env{db}
+	directory := filesystem.NewDirectory(os.Getenv("ETHER_CONTENT_DIR"))
+	env := &handlers.Env{
+		DB:        db,
+		Directory: directory,
+	}
 
 	httpMux := mux.NewRouter()
 
@@ -57,6 +62,12 @@ func main() {
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
 		env.DeleteConversationHandler,
 	).Methods("DELETE")
+
+	// Conversation Content read
+	httpMux.HandleFunc(
+		"/ether/v1/conversations/{conversation_id:[0-9]+}/content",
+		env.GetContentHandler,
+	).Methods("GET")
 
 	// User-Conversation Mapping CRUD
 	httpMux.HandleFunc(

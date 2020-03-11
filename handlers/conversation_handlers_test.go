@@ -3,10 +3,14 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"ether/filesystem"
 	"ether/models"
 	"ether/utils"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"reflect"
 	"strconv"
 	"testing"
@@ -71,6 +75,20 @@ func TestPostConversationsHandler(t *testing.T) {
 			Location: "/ether/v1/conversations/1",
 		},
 		{
+			Name:       "Successful conversation creation (only name)",
+			StatusCode: http.StatusCreated,
+			ReqBody: map[string]interface{}{
+				"name": "test_name",
+			},
+			ResBody: &models.Conversation{
+				ID:          1,
+				Name:        "test_name",
+				Description: utils.StringPtr(""),
+				AvatarURL:   utils.StringPtr(""),
+			},
+			Location: "/ether/v1/conversations/1",
+		},
+		{
 			Name:       "Failed conversation creation (empty name)",
 			StatusCode: http.StatusBadRequest,
 			ReqBody: map[string]interface{}{
@@ -115,8 +133,11 @@ func TestPostConversationsHandler(t *testing.T) {
 
 	var userID int64 = 1
 	var conversationID int64 = 1
+	var contentDir = os.Getenv("ETHER_CONTENT_DIR")
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+
 			reqBody, _ := json.Marshal(test.ReqBody)
 			r := httptest.NewRequest("POST", "/ether/v1/conversations", bytes.NewReader(reqBody))
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
@@ -124,7 +145,10 @@ func TestPostConversationsHandler(t *testing.T) {
 
 			mDB := models.NewMockDB(nil, nil, nil)
 
-			env := &Env{DB: mDB}
+			env := &Env{
+				DB:        mDB,
+				Directory: filesystem.NewDirectory(contentDir),
+			}
 			env.PostConversationHandler(w, r)
 
 			if w.Code != test.StatusCode {
@@ -146,6 +170,11 @@ func TestPostConversationsHandler(t *testing.T) {
 					)
 				}
 
+				// Validate that file was created
+				if _, err := os.Stat(filePath); err != nil {
+					t.Errorf("No file at expected location: %s", filePath)
+				}
+
 				// Validate DB function calls
 				if !reflect.DeepEqual(*test.ResBody, *mDB.Conversations[conversationID]) {
 					t.Errorf(
@@ -158,11 +187,13 @@ func TestPostConversationsHandler(t *testing.T) {
 					t.Errorf("Used incorrect user ID as owner, expected %d", userID)
 				}
 			}
+
+			os.Remove(filePath)
 		})
 	}
 }
 
-func TestGetConversationsHandler(t *testing.T) {
+func TestGetConversationHandler(t *testing.T) {
 	tests := []struct {
 		Name       string
 		StatusCode int
@@ -239,7 +270,7 @@ func TestGetConversationsHandler(t *testing.T) {
 	}
 }
 
-func TestGetUsersConversationsHandler(t *testing.T) {
+func TestGetConversationsHandler(t *testing.T) {
 	tests := []struct {
 		Name          string
 		StatusCode    int
@@ -623,8 +654,13 @@ func TestDeleteConversationsHandler(t *testing.T) {
 
 	var userID int64 = 1
 	var conversationID int64 = 1
+	var contentDir = os.Getenv("ETHER_CONTENT_DIR")
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			filePath := path.Join(contentDir, fmt.Sprintf("%d.html", conversationID))
+			f, _ := os.Create(filePath)
+			f.Close()
+
 			r := httptest.NewRequest("DELETE", "/ether/v1/conversations/1", nil)
 			r.Header.Set("User-ID", strconv.FormatInt(userID, 10))
 			r = mux.SetURLVars(r, map[string]string{
@@ -646,7 +682,10 @@ func TestDeleteConversationsHandler(t *testing.T) {
 				nil,
 			)
 
-			env := &Env{DB: mDB}
+			env := &Env{
+				DB:        mDB,
+				Directory: filesystem.NewDirectory(contentDir),
+			}
 			env.DeleteConversationHandler(w, r)
 
 			if w.Code != test.StatusCode {
@@ -657,6 +696,11 @@ func TestDeleteConversationsHandler(t *testing.T) {
 				if mDB.Conversations[conversationID] != nil {
 					// Validate DB function calls
 					t.Error("Didn't properly delete conversation")
+
+					// Validate that file was deleted
+					if _, err := os.Stat(filePath); os.IsNotExist(err) {
+						t.Errorf("File still exists at location: %s", filePath)
+					}
 				}
 			}
 		})

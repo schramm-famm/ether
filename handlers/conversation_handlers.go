@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"ether/models"
+	"ether/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,11 +28,18 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if reqConversation.Name == "" || reqConversation.Description == nil {
-		errMsg := "Request body is missing field(s)"
+	if reqConversation.Name == "" {
+		errMsg := "Request body is missing mandatory field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
+	}
+
+	if reqConversation.Description == nil {
+		reqConversation.Description = utils.StringPtr("")
+	}
+	if reqConversation.AvatarURL == nil {
+		reqConversation.AvatarURL = utils.StringPtr("")
 	}
 
 	conversationID, err := env.DB.CreateConversation(reqConversation, userID)
@@ -40,7 +48,10 @@ func (env *Env) PostConversationHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// TODO: Create HTML file
+	if env.Directory.Create(conversationID); err != nil {
+		internalServerError(w, err)
+		return
+	}
 
 	reqConversation.ID = conversationID
 	location := fmt.Sprintf("%s/%d", r.URL.Path, conversationID)
@@ -108,9 +119,6 @@ func (env *Env) GetConversationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Get conversation HTML
-	// TODO: Get conversation picture
-
 	w.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
 }
@@ -151,6 +159,11 @@ func (env *Env) DeleteConversationHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if err := env.Directory.Remove(conversationID); err != nil {
+		internalServerError(w, err)
+		return
+	}
+
 	err = env.DB.DeleteConversation(conversationID)
 	if err != nil {
 		internalServerError(w, err)
@@ -177,7 +190,7 @@ func (env *Env) PatchConversationHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	if reqConversation.Name == "" && reqConversation.Description == nil && reqConversation.AvatarURL == nil {
-		errMsg := `Request body has neither "name" nor "description"`
+		errMsg := `Request body must have one of "name", "description", or "avatar_url"`
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
 		return
