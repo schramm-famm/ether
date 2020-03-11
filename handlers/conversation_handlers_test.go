@@ -173,7 +173,7 @@ func TestPostConversationsHandler(t *testing.T) {
 	}
 }
 
-func TestGetConversationsHandler(t *testing.T) {
+func TestGetConversationHandler(t *testing.T) {
 	tests := []struct {
 		Name       string
 		StatusCode int
@@ -250,7 +250,7 @@ func TestGetConversationsHandler(t *testing.T) {
 	}
 }
 
-func TestGetUsersConversationsHandler(t *testing.T) {
+func TestGetConversationsHandler(t *testing.T) {
 	tests := []struct {
 		Name          string
 		StatusCode    int
