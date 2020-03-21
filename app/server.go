@@ -22,11 +22,10 @@ func logging(f http.Handler) http.Handler {
 
 func main() {
 	connectionString := fmt.Sprintf(
-		"%s:%s@tcp(%s)/%s?interpolateParams=true",
+		"%s:%s@tcp(%s)/?interpolateParams=true",
 		os.Getenv("ETHER_DB_USERNAME"),
 		os.Getenv("ETHER_DB_PASSWORD"),
-		os.Getenv("ETHER_DB_LOCATION"),
-		os.Getenv("ETHER_DB_DATABASE"))
+		os.Getenv("ETHER_DB_LOCATION"))
 	db, err := models.NewDB(connectionString)
 	if err != nil {
 		log.Fatal("Failed to open database: ", err)
@@ -93,7 +92,7 @@ func main() {
 	httpMux.Use(logging)
 
 	httpSrv := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":80",
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  120 * time.Second,
