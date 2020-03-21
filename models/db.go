@@ -2,6 +2,8 @@ package models
 
 import (
 	"database/sql"
+	"io/ioutil"
+	"strings"
 
 	// MySQL database driver
 	_ "github.com/go-sql-driver/mysql"
@@ -36,5 +38,30 @@ func NewDB(dataSourceName string) (*DB, error) {
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}
+	if err = setupDB(db); err != nil {
+		return nil, err
+	}
 	return &DB{db}, nil
+}
+
+// setupDB creates the necessary "ether" database and tables if they don't
+// already exist and makes the db connection use the "ether" database.
+func setupDB(db *sql.DB) error {
+	sqlScript, err := ioutil.ReadFile("dbSchema.sql")
+	if err != nil {
+		return err
+	}
+
+	statements := strings.Split(string(sqlScript), ";")
+	if len(statements) > 0 {
+		statements = statements[:len(statements)-1]
+	}
+
+	for _, statement := range statements {
+		_, err = db.Exec(statement)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
