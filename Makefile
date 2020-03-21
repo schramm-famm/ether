@@ -4,7 +4,7 @@ TAG?=latest
 ETHER_DB_LOCATION?=localhost:3306
 ETHER_DB_USERNAME?=ether
 ETHER_DB_PASSWORD?=ether
-ETHER_CONTENT_DIR=./
+ETHER_CONTENT_DIR?=./
 HELP_FUNC = \
     %help; \
     while(<>) { \
