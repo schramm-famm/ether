@@ -8,13 +8,13 @@ import (
 	"log"
 	"strconv"
 
-	kafka "github.com/segmentio/kafka-go"
+	segkafka "github.com/segmentio/kafka-go"
 )
 
 // Reader represents a Kafka consumer which consumes and processes conversation
 // update messages.
 type Reader struct {
-	reader       *kafka.Reader
+	reader       *segkafka.Reader
 	cachedWriter *filesystem.CachedWriter
 	db           models.Datastore
 }
@@ -22,7 +22,7 @@ type Reader struct {
 // NewReader initializes a new Reader.
 func NewReader(location, topic string, directory *filesystem.Directory, db models.Datastore) *Reader {
 	return &Reader{
-		reader: kafka.NewReader(kafka.ReaderConfig{
+		reader: segkafka.NewReader(segkafka.ReaderConfig{
 			Brokers:  []string{location},
 			GroupID:  "ether",
 			Topic:    topic,
@@ -32,6 +32,43 @@ func NewReader(location, topic string, directory *filesystem.Directory, db model
 		cachedWriter: filesystem.NewCachedWriter(directory),
 		db:           db,
 	}
+}
+
+func (r *Reader) handleUpdate(conversationID int64, msg Message) error {
+	// Tell writer goroutine to update this conversation's content file with
+	// this patch
+	update := &filesystem.Update{
+		ConversationID: conversationID,
+		Patch:          *msg.Data.Patch,
+	}
+	r.cachedWriter.Write <- update
+
+	// Set conversation LastModified time to now
+	return r.db.TouchConversation(conversationID)
+}
+
+func (r *Reader) processMessage(kafkaMsg segkafka.Message) error {
+	conversationID, err := strconv.ParseInt(string(kafkaMsg.Key), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	msg := Message{}
+	if err := json.Unmarshal(kafkaMsg.Value, &msg); err != nil {
+		return err
+	}
+
+	switch msg.Type {
+	case TypeUpdate:
+		if err := r.handleUpdate(conversationID, msg); err != nil {
+			return err
+		}
+
+	default:
+		// TODO: handle other message types (UserJoin, UserLeave)?
+	}
+
+	return nil
 }
 
 // Run reads from the Kafka topic indefinitely and, upon receiving a message,
@@ -49,31 +86,8 @@ func (r *Reader) Run() {
 			log.Fatal(err)
 		}
 
-		conversationID, err := strconv.ParseInt(string(m.Key), 10, 64)
-		if err != nil {
-			log.Printf("Kafka message key was not an integer: %s", string(m.Key))
-			continue
-		}
-
-		message := Message{}
-		if err := json.Unmarshal(m.Value, &message); err != nil {
-			log.Printf("Kafka message value malformed: %v", err)
-			continue
-		}
-
-		// Tell writer goroutine to update this conversation's content file with
-		// this patch
-		update := &filesystem.Update{
-			ConversationID: conversationID,
-			Patch:          *message.Data.Patch,
-		}
-		r.cachedWriter.Write <- update
-
-		// Set conversation LastModified time to now
-		err = r.db.TouchConversation(conversationID)
-		if err != nil {
-			log.Printf("Failed to update LastModified time: %v", err)
-			continue
+		if err := r.processMessage(m); err != nil {
+			log.Printf("Failed to process Kafka message: %v", err)
 		}
 	}
 }
