@@ -62,6 +62,25 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check with Karen that user to be added exists
+	client := &http.Client{}
+	url := fmt.Sprintf("http://192.168.69.69:80/karen/v1/users/%d", reqMember.UserID)
+	request, _ := http.NewRequest("GET", url, nil)
+	request.Header.Set("User_ID", strconv.FormatInt(reqMember.UserID, 10))
+	response, err := client.Do(request)
+	if err != nil {
+		errMsg := "Karen GET request failed"
+		log.Println(errMsg + ": " + err.Error())
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+	if response.StatusCode == http.StatusNotFound {
+		errMsg := "User not found"
+		log.Println(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
 	if !reqMember.Role.Valid() || reqMember.Role == models.Owner ||
 		sessionMember.Role != models.Owner && reqMember.Role != models.User {
 		errMsg := "Invalid role value"
