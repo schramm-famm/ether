@@ -5,6 +5,8 @@ ETHER_DB_LOCATION?=localhost:3306
 ETHER_DB_USERNAME?=ether
 ETHER_DB_PASSWORD?=ether
 ETHER_CONTENT_DIR?=./
+ETHER_KAFKA_SERVER?=localhost:9092
+ETHER_KAFKA_TOPIC?=updates
 HELP_FUNC = \
     %help; \
     while(<>) { \
@@ -42,6 +44,8 @@ run: build			## build and run the app binaries
 		export ETHER_DB_USERNAME=${ETHER_DB_USERNAME} && \
 		export ETHER_DB_PASSWORD=${ETHER_DB_PASSWORD} && \
 		export ETHER_CONTENT_DIR=${ETHER_CONTENT_DIR} && \
+		export ETHER_KAFKA_SERVER=${ETHER_KAFKA_SERVER} && \
+		export ETHER_KAFKA_TOPIC=${ETHER_KAFKA_TOPIC} && \
 		./tmp/app
 
 docker: tmp 		## build the docker image
@@ -53,6 +57,8 @@ docker-run: docker	## start the built docker image in a container
 		-e ETHER_DB_USERNAME=$(ETHER_DB_USERNAME) \
 		-e ETHER_DB_PASSWORD=$(ETHER_DB_PASSWORD) \
 		-e ETHER_CONTENT_DIR=$(ETHER_CONTENT_DIR) \
+		-e ETHER_KAFKA_SERVER=${ETHER_KAFKA_SERVER} \
+		-e ETHER_KAFKA_TOPIC=${ETHER_KAFKA_TOPIC} \
 		--name $(APP_NAME) $(REGISTRY)/$(APP_NAME):$(TAG)
 
 docker-push: tmp docker

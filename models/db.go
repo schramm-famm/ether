@@ -15,6 +15,7 @@ type Datastore interface {
 	GetConversation(id int64) (*Conversation, error)
 	GetConversations(userID int64, sort string) ([]Conversation, error)
 	UpdateConversation(conversation *Conversation) error
+	TouchConversation(conversationID int64) error
 	DeleteConversation(id int64) error
 
 	CreateUserConversationMapping(mapping *UserConversationMapping) error

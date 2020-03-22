@@ -3,6 +3,7 @@ package main
 import (
 	"ether/filesystem"
 	"ether/handlers"
+	"ether/kafka"
 	"ether/models"
 	"fmt"
 	"log"
@@ -37,6 +38,14 @@ func main() {
 		DB:        db,
 		Directory: directory,
 	}
+
+	kafkaReader := kafka.NewReader(
+		os.Getenv("ETHER_KAFKA_SERVER"),
+		os.Getenv("ETHER_KAFKA_TOPIC"),
+		directory,
+		db,
+	)
+	go kafkaReader.Run()
 
 	httpMux := mux.NewRouter()
 
