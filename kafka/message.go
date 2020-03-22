@@ -1,11 +1,15 @@
 package kafka
 
+// Message represents a json-encoded WebSocket message using the Riht protocol.
 type Message struct {
 	Type MessageType `json:"type"`
 	Data InnerData   `json:"data"`
 }
 
+// MessageType represents the possible Riht WebSocket protocol message types.
 type MessageType int
+
+// UpdateType represents the possible Update message subtypes.
 type UpdateType int
 
 const (
@@ -19,6 +23,7 @@ const (
 	UpdateTypeCursor UpdateType = 1
 )
 
+// InnerData represents the payload of a Riht WebSocket protocol message.
 type InnerData struct {
 	Type        *UpdateType      `json:"type,omitempty"`
 	Version     *int             `json:"version,omitempty"`
@@ -29,6 +34,8 @@ type InnerData struct {
 	ActiveUsers *map[int64]Caret `json:"active_users,omitempty"`
 }
 
+// Delta represents the caret and content shifts associated with an Update
+// message.
 type Delta struct {
 	CaretStart *int `json:"caret_start,omitempty"`
 	CaretEnd   *int `json:"caret_end,omitempty"`

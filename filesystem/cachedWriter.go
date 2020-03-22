@@ -9,22 +9,27 @@ import (
 
 var dmp *diffmatchpatch.DiffMatchPatch = diffmatchpatch.New()
 
+// File represents a cached file.
 type File struct {
 	content      string
 	lastReadTime time.Time
 }
 
+// Update represents a conversation content file update.
 type Update struct {
 	ConversationID int64
 	Patch          string
 }
 
+// CachedWriter encapsulates the behaviour of updating files in the filesytem
+// with caching capabilities to minimize I/O operations.
 type CachedWriter struct {
 	directory *Directory
 	files     map[int64]File
 	Write     chan *Update
 }
 
+// NewCachedWriter initializes a new CachedWriter.
 func NewCachedWriter(directory *Directory) *CachedWriter {
 	return &CachedWriter{
 		directory: directory,
@@ -33,7 +38,12 @@ func NewCachedWriter(directory *Directory) *CachedWriter {
 	}
 }
 
+// Run loops indefinitely and blocks on a channel where Update structs will come
+// in and be processed one by one.
 func (cw *CachedWriter) Run() {
+	/* TODO: cache the file content so that we don't have to read and write the
+	   file every time a new Update comes in. */
+
 	for {
 		select {
 		case update := <-cw.Write:
