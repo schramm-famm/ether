@@ -13,6 +13,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	usersRoute = "/karen/v1/users/"
+)
+
 // PostMappingHandler adds a single user to a conversation
 func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -62,12 +66,15 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check with Karen that user to be added exists
-	client := &http.Client{}
-	url := fmt.Sprintf("http://192.168.69.69:80/karen/v1/users/%d", reqMember.UserID)
-	request, _ := http.NewRequest("GET", url, nil)
-	request.Header.Set("User_ID", strconv.FormatInt(reqMember.UserID, 10))
-	response, err := client.Do(request)
+	// Check with Karen if user to be added exists
+	url := fmt.Sprintf("http://" + env.KarenHost + usersRoute + strconv.FormatInt(reqMember.UserID, 10))
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	request.Header.Add("User_ID", strconv.FormatInt(reqMember.UserID, 10))
+	response, err := env.Client.Do(request)
 	if err != nil {
 		errMsg := "Karen GET request failed"
 		log.Println(errMsg + ": " + err.Error())

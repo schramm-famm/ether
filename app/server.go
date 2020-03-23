@@ -33,9 +33,14 @@ func main() {
 	}
 
 	directory := filesystem.NewDirectory(os.Getenv("ETHER_CONTENT_DIR"))
+
+	client := &http.Client{}
+	karen := os.Getenv("KAREN_HOST")
 	env := &handlers.Env{
 		DB:        db,
 		Directory: directory,
+		Client:    client,
+		KarenHost: karen,
 	}
 
 	httpMux := mux.NewRouter()
