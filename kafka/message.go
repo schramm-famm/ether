@@ -16,8 +16,9 @@ const (
 	TypeInit      MessageType = 0
 	TypeUpdate    MessageType = 1
 	TypeAck       MessageType = 2
-	TypeUserJoin  MessageType = 3
-	TypeUserLeave MessageType = 4
+	TypeSync      MessageType = 3
+	TypeUserJoin  MessageType = 4
+	TypeUserLeave MessageType = 5
 
 	UpdateTypeEdit   UpdateType = 0
 	UpdateTypeCursor UpdateType = 1
