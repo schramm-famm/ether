@@ -3,6 +3,7 @@ package main
 import (
 	"ether/filesystem"
 	"ether/handlers"
+	"ether/kafka"
 	"ether/models"
 	"fmt"
 	"log"
@@ -33,7 +34,24 @@ func main() {
 	}
 
 	directory := filesystem.NewDirectory(os.Getenv("ETHER_CONTENT_DIR"))
-	env := &handlers.Env{
+
+	kafkaEnv := &kafka.Env{
+		DB:           db,
+		CachedWriter: filesystem.NewCachedWriter(directory),
+	}
+
+	// Start file writer goroutine
+	go kafkaEnv.CachedWriter.Run()
+
+	kafkaReader := kafka.NewReader(
+		os.Getenv("ETHER_KAFKA_SERVER"),
+		os.Getenv("ETHER_KAFKA_TOPIC"),
+	)
+
+	// Start Kafka reader goroutine
+	go kafkaReader.Run(kafkaEnv.ProcessWSMessage)
+
+	httpEnv := &handlers.Env{
 		DB:        db,
 		Directory: directory,
 	}
@@ -43,51 +61,51 @@ func main() {
 	// Conversation CRUD
 	httpMux.HandleFunc(
 		"/ether/v1/conversations",
-		env.PostConversationHandler,
+		httpEnv.PostConversationHandler,
 	).Methods("POST")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations",
-		env.GetConversationsHandler,
+		httpEnv.GetConversationsHandler,
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		env.GetConversationHandler,
+		httpEnv.GetConversationHandler,
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		env.PatchConversationHandler,
+		httpEnv.PatchConversationHandler,
 	).Methods("PATCH")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}",
-		env.DeleteConversationHandler,
+		httpEnv.DeleteConversationHandler,
 	).Methods("DELETE")
 
 	// Conversation Content read
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/content",
-		env.GetContentHandler,
+		httpEnv.GetContentHandler,
 	).Methods("GET")
 
 	// User-Conversation Mapping CRUD
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
-		env.PostMappingHandler,
+		httpEnv.PostMappingHandler,
 	).Methods("POST")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
-		env.GetMappingHandler,
+		httpEnv.GetMappingHandler,
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/users",
-		env.GetMappingsHandler,
+		httpEnv.GetMappingsHandler,
 	).Methods("GET")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
-		env.PatchMappingHandler,
+		httpEnv.PatchMappingHandler,
 	).Methods("PATCH")
 	httpMux.HandleFunc(
 		"/ether/v1/conversations/{conversation_id:[0-9]+}/users/{user_id:[0-9]+}",
-		env.DeleteMappingHandler,
+		httpEnv.DeleteMappingHandler,
 	).Methods("DELETE")
 	httpMux.Use(logging)
 

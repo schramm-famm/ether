@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-// Env represents all application-level items that are needed by handlers
+// Env represents all application-level items that are needed by HTTP handlers.
 type Env struct {
 	DB        models.Datastore
 	Directory *filesystem.Directory
