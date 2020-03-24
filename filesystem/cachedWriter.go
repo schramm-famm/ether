@@ -65,7 +65,7 @@ func (cw *CachedWriter) Run() {
 				continue
 			}
 
-			cw.directory.WriteFile(update.ConversationID, []byte(newContent))
+			err = cw.directory.WriteFile(update.ConversationID, []byte(newContent))
 			if err != nil {
 				log.Printf("Failed to write content file: %v", err)
 				continue
