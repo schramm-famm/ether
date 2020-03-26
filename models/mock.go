@@ -112,6 +112,10 @@ func (db *MockDB) UpdateConversation(conversation *Conversation) error {
 	return nil
 }
 
+func (db *MockDB) TouchConversation(conversationID int64) error {
+	return db.getError()
+}
+
 func (db *MockDB) DeleteConversation(id int64) error {
 	if err := db.getError(); err != nil {
 		return err

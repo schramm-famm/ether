@@ -166,6 +166,25 @@ func (db *DB) UpdateConversation(conversation *Conversation) error {
 	return nil
 }
 
+// TouchConversation sets the LastModified value of a "conversations" table row
+// to the current time.
+func (db *DB) TouchConversation(conversationID int64) error {
+	var b strings.Builder
+	fmt.Fprintf(&b, "UPDATE %s SET ", conversationsTable)
+	fmt.Fprintf(&b, "LastModified=NOW() WHERE ID=?")
+	res, err := db.Exec(b.String(), conversationID)
+	if err != nil {
+		return err
+	}
+
+	if rowCount, err := res.RowsAffected(); err == nil {
+		log.Printf(`Updated %d row(s) in "%s"`, rowCount, conversationsTable)
+	} else {
+		log.Println("Failed to get number of rows affected: " + err.Error())
+	}
+	return nil
+}
+
 // DeleteConversation removes a row from the "conversations" table
 func (db *DB) DeleteConversation(id int64) error {
 	tx, err := db.Begin()
