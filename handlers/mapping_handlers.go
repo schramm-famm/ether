@@ -73,18 +73,22 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w, err)
 		return
 	}
-	request.Header.Add("User_ID", strconv.FormatInt(reqMember.UserID, 10))
+	request.Header.Add("User-ID", strconv.FormatInt(reqMember.UserID, 10))
 	response, err := env.Client.Do(request)
 	if err != nil {
-		errMsg := "Karen GET request failed"
-		log.Println(errMsg + ": " + err.Error())
-		http.Error(w, errMsg, http.StatusBadRequest)
+		internalServerError(w, err)
 		return
 	}
-	if response.StatusCode == http.StatusNotFound {
-		errMsg := "User not found"
-		log.Println(errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
+	if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusNotFound {
+			errMsg := "User not found"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusNotFound)
+		} else {
+			errMsg := response.Status
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusBadRequest)
+		}
 		return
 	}
 
