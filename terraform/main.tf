@@ -5,8 +5,8 @@ provider "aws" {
 }
 
 module "ecs_base" {
-  source = "github.com/schramm-famm/bespin//modules/ecs_base"
-  name   = var.name
+  source             = "github.com/schramm-famm/bespin//modules/ecs_base"
+  name               = var.name
   enable_nat_gateway = true
 }
 
@@ -79,7 +79,7 @@ module "ether" {
   db_password     = var.rds_password
   content_dir     = "./"
   kafka_server    = "localhost:9092"
-  kafka_topic      = "updates"
+  kafka_topic     = "updates"
 }
 
 module "rds_instance" {
