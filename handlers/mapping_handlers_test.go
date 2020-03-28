@@ -303,7 +303,7 @@ func TestPostMappingHandler(t *testing.T) {
 		},
 		{
 			Name:            "Failed member creation (User not found in Karen)",
-			StatusCode:      http.StatusBadRequest,
+			StatusCode:      http.StatusNotFound,
 			KarenStatusCode: http.StatusNotFound,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
