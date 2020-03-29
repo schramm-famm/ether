@@ -40,7 +40,7 @@ resource "aws_ecs_task_definition" "ether" {
         },
         {
             "name": "ETHER_CONTENT_DIR",
-            "value": "${var.content_dir}"
+            "value": "/tmp"
         },
         {
             "name": "ETHER_KAFKA_SERVER",
@@ -57,10 +57,24 @@ resource "aws_ecs_task_definition" "ether" {
         "hostPort": ${var.port},
         "protocol": "tcp"
       }
+    ],
+    "mountPoints": [
+      {
+        "sourceVolume": "efsVolume",
+        "containerPath": "/tmp"
+      }
     ]
   }
 ]
 EOF
+
+  volume {
+    name = "efsVolume"
+    efs_volume_configuration {
+      file_system_id = var.efs_id
+      root_directory = "/"
+    }
+  }
 }
 
 resource "aws_elb" "ether" {

@@ -50,11 +50,6 @@ variable "db_password" {
   description = "Password for accessing the MariaDB server"
 }
 
-variable "content_dir" {
-  type        = string
-  description = "Directory in file system for storing HTML content files"
-}
-
 variable "kafka_server" {
   type        = string
   description = "Server where Kafka is running"
@@ -63,4 +58,9 @@ variable "kafka_server" {
 variable "kafka_topic" {
   type        = string
   description = "Kafka topic to read from"
+}
+
+variable "efs_id" {
+  type        = string
+  description = "ID of the EFS file system mounted on the container instances"
 }
