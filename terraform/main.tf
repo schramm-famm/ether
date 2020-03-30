@@ -90,7 +90,7 @@ module "ether" {
   db_location     = module.rds_instance.db_endpoint
   db_username     = var.rds_username
   db_password     = var.rds_password
-  kafka_server    = "localhost:9092"
+  kafka_server    = split(",", aws_msk_cluster.main.bootstrap_brokers)[0]
   kafka_topic     = "updates"
   efs_id          = aws_efs_file_system.ether.id
 }
@@ -135,4 +135,43 @@ resource "aws_efs_mount_target" "ether" {
   file_system_id  = aws_efs_file_system.ether.id
   subnet_id       = module.ecs_base.vpc_private_subnets[count.index]
   security_groups = [aws_security_group.efs.id]
+}
+
+resource "aws_security_group" "kafka" {
+  name        = "${var.name}_kafka"
+  description = "Allow traffic for kafka instances"
+  vpc_id      = module.ecs_base.vpc_id
+
+  ingress {
+    from_port   = 9092
+    to_port     = 9092
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_msk_cluster" "main" {
+  cluster_name           = "main"
+  kafka_version          = "2.3.1"
+  number_of_broker_nodes = 2
+
+  broker_node_group_info {
+    instance_type   = "kafka.m5.large"
+    ebs_volume_size = 1000
+    client_subnets  = module.ecs_base.vpc_public_subnets
+    security_groups = [aws_security_group.kafka.id]
+  }
+
+  encryption_info {
+    encryption_in_transit {
+      client_broker = "PLAINTEXT"
+    }
+  }
 }
