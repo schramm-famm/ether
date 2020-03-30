@@ -49,6 +49,10 @@ resource "aws_ecs_task_definition" "ether" {
         {
             "name": "ETHER_KAFKA_TOPIC",
             "value": "${var.kafka_topic}"
+        },
+        {
+            "name": "KAREN_SERVER",
+            "value": "${var.karen_endpoint}"
         }
     ],
     "portMappings": [

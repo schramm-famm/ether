@@ -60,6 +60,11 @@ variable "kafka_topic" {
   description = "Kafka topic to read from"
 }
 
+variable "karen_endpoint" {
+  type        = string
+  description = "Endpoint for accessing the karen service"
+}
+
 variable "efs_id" {
   type        = string
   description = "ID of the EFS file system mounted on the container instances"

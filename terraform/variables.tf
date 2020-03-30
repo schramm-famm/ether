@@ -29,8 +29,14 @@ variable "rds_password" {
   description = "Password for the master RDS user"
 }
 
-variable "container_tag" {
+variable "ether_container_tag" {
   type        = string
   description = "Tag of the Docker container to be used in the ether container definition"
+  default     = "latest"
+}
+
+variable "karen_container_tag" {
+  type        = string
+  description = "Tag of the Docker container to be used in the karen container definition"
   default     = "latest"
 }

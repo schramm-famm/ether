@@ -81,7 +81,7 @@ resource "aws_security_group" "backend" {
 module "ether" {
   source          = "./modules/ether"
   name            = var.name
-  container_tag   = var.container_tag
+  container_tag   = var.ether_container_tag
   port            = 80
   cluster_id      = module.ecs_cluster.cluster_id
   security_groups = [aws_security_group.load_balancer.id]
@@ -92,7 +92,22 @@ module "ether" {
   db_password     = var.rds_password
   kafka_server    = split(",", aws_msk_cluster.main.bootstrap_brokers)[0]
   kafka_topic     = "updates"
+  karen_endpoint  = module.karen.elb_dns_name
   efs_id          = aws_efs_file_system.ether.id
+}
+
+module "karen" {
+  source          = "github.com/schramm-famm/karen//terraform/modules/karen"
+  name            = var.name
+  container_tag   = var.karen_container_tag
+  port            = 8081
+  cluster_id      = module.ecs_cluster.cluster_id
+  security_groups = [aws_security_group.load_balancer.id]
+  subnets         = module.ecs_base.vpc_private_subnets
+  internal        = true
+  db_location     = module.rds_instance.db_endpoint
+  db_username     = var.rds_username
+  db_password     = var.rds_password
 }
 
 module "rds_instance" {
