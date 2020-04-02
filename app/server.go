@@ -35,6 +35,9 @@ func main() {
 
 	directory := filesystem.NewDirectory(os.Getenv("ETHER_CONTENT_DIR"))
 
+	client := &http.Client{}
+	karen := os.Getenv("KAREN_SERVER")
+
 	kafkaEnv := &kafka.Env{
 		DB:           db,
 		CachedWriter: filesystem.NewCachedWriter(directory),
@@ -54,6 +57,8 @@ func main() {
 	httpEnv := &handlers.Env{
 		DB:        db,
 		Directory: directory,
+		Client:    client,
+		KarenHost: karen,
 	}
 
 	httpMux := mux.NewRouter()

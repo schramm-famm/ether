@@ -15,6 +15,8 @@ import (
 type Env struct {
 	DB        models.Datastore
 	Directory *filesystem.Directory
+	Client    *http.Client
+	KarenHost string
 }
 
 func internalServerError(w http.ResponseWriter, err error) {

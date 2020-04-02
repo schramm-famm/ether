@@ -13,6 +13,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	usersRoute = "/karen/v1/users/"
+)
+
 // PostMappingHandler adds a single user to a conversation
 func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -59,6 +63,32 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		errMsg := "Request body is missing field(s)"
 		log.Println(errMsg)
 		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	// Check with Karen if user to be added exists
+	url := fmt.Sprintf("http://" + env.KarenHost + usersRoute + strconv.FormatInt(reqMember.UserID, 10))
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	request.Header.Add("User-ID", strconv.FormatInt(reqMember.UserID, 10))
+	response, err := env.Client.Do(request)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusNotFound {
+			errMsg := "User not found"
+			log.Println(errMsg)
+			http.Error(w, errMsg, http.StatusNotFound)
+		} else {
+			errMsg := response.Status
+			log.Println(errMsg)
+			http.Error(w, errMsg, response.StatusCode)
+		}
 		return
 	}
 

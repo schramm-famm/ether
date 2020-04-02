@@ -9,26 +9,36 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
+type User struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func TestPostMappingHandler(t *testing.T) {
 	tests := []struct {
-		Name          string
-		StatusCode    int
-		ReqBody       interface{}
-		ResBody       *models.UserConversationMapping
-		Conversation  *models.Conversation
-		SessionMember *models.UserConversationMapping
-		Location      string
-		Error         *mysql.MySQLError
+		Name            string
+		StatusCode      int
+		KarenStatusCode int
+		ReqBody         interface{}
+		ResBody         *models.UserConversationMapping
+		Conversation    *models.Conversation
+		SessionMember   *models.UserConversationMapping
+		Location        string
+		Error           *mysql.MySQLError
 	}{
 		{
-			Name:       "Successful member creation (owner creates user)",
-			StatusCode: http.StatusCreated,
+			Name:            "Successful member creation (owner creates user)",
+			StatusCode:      http.StatusCreated,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "user",
@@ -55,8 +65,9 @@ func TestPostMappingHandler(t *testing.T) {
 			Location: "/ether/v1/conversations/11/users/1",
 		},
 		{
-			Name:       "Successful member creation (owner creates admin)",
-			StatusCode: http.StatusCreated,
+			Name:            "Successful member creation (owner creates admin)",
+			StatusCode:      http.StatusCreated,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "admin",
@@ -83,8 +94,9 @@ func TestPostMappingHandler(t *testing.T) {
 			Location: "/ether/v1/conversations/11/users/1",
 		},
 		{
-			Name:       "Successful member creation (admin creates user)",
-			StatusCode: http.StatusCreated,
+			Name:            "Successful member creation (admin creates user)",
+			StatusCode:      http.StatusCreated,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "user",
@@ -111,8 +123,9 @@ func TestPostMappingHandler(t *testing.T) {
 			Location: "/ether/v1/conversations/11/users/1",
 		},
 		{
-			Name:       "Successful member creation (user creates user)",
-			StatusCode: http.StatusCreated,
+			Name:            "Successful member creation (user creates user)",
+			StatusCode:      http.StatusCreated,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "user",
@@ -139,16 +152,18 @@ func TestPostMappingHandler(t *testing.T) {
 			Location: "/ether/v1/conversations/11/users/1",
 		},
 		{
-			Name:       "Failed member creation (conversation does not exist)",
-			StatusCode: http.StatusNotFound,
+			Name:            "Failed member creation (conversation does not exist)",
+			StatusCode:      http.StatusNotFound,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "foobar",
 			},
 		},
 		{
-			Name:       "Failed member creation (user not in conversation)",
-			StatusCode: http.StatusNotFound,
+			Name:            "Failed member creation (user not in conversation)",
+			StatusCode:      http.StatusNotFound,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "user",
@@ -160,8 +175,9 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Failed member creation (owner creates owner)",
-			StatusCode: http.StatusBadRequest,
+			Name:            "Failed member creation (owner creates owner)",
+			StatusCode:      http.StatusBadRequest,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "owner",
@@ -180,8 +196,9 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Failed member creation (admin creates admin)",
-			StatusCode: http.StatusBadRequest,
+			Name:            "Failed member creation (admin creates admin)",
+			StatusCode:      http.StatusBadRequest,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "admin",
@@ -200,8 +217,9 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Failed member creation (pending user creates user)",
-			StatusCode: http.StatusForbidden,
+			Name:            "Failed member creation (pending user creates user)",
+			StatusCode:      http.StatusForbidden,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "user",
@@ -220,8 +238,9 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Failed member creation (empty role)",
-			StatusCode: http.StatusBadRequest,
+			Name:            "Failed member creation (empty role)",
+			StatusCode:      http.StatusBadRequest,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "owner",
@@ -240,8 +259,9 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Failed member creation (invalid role string)",
-			StatusCode: http.StatusBadRequest,
+			Name:            "Failed member creation (invalid role string)",
+			StatusCode:      http.StatusBadRequest,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "foobar",
@@ -260,8 +280,9 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 		},
 		{
-			Name:       "Failed member creation (member already in conversation)",
-			StatusCode: http.StatusConflict,
+			Name:            "Failed member creation (member already in conversation)",
+			StatusCode:      http.StatusConflict,
+			KarenStatusCode: http.StatusOK,
 			ReqBody: map[string]interface{}{
 				"user_id": 1,
 				"role":    "user",
@@ -280,6 +301,35 @@ func TestPostMappingHandler(t *testing.T) {
 			},
 			Error: &mysql.MySQLError{Number: 1062, Message: ""},
 		},
+		{
+			Name:            "Failed member creation (User not found in Karen)",
+			StatusCode:      http.StatusNotFound,
+			KarenStatusCode: http.StatusNotFound,
+			ReqBody: map[string]interface{}{
+				"user_id": 1,
+				"role":    "user",
+			},
+			ResBody: &models.UserConversationMapping{
+				UserID:         1,
+				ConversationID: 11,
+				Role:           "user",
+				Nickname:       utils.StringPtr(""),
+				Pending:        utils.BoolPtr(true),
+			},
+			Conversation: &models.Conversation{
+				ID:          11,
+				Name:        "testname",
+				Description: utils.StringPtr("testdesc"),
+			},
+			SessionMember: &models.UserConversationMapping{
+				UserID:         1337,
+				ConversationID: 11,
+				Role:           "owner",
+				Nickname:       utils.StringPtr("testowner"),
+				Pending:        utils.BoolPtr(false),
+			},
+			Location: "/ether/v1/conversations/11/users/1",
+		},
 	}
 
 	for _, test := range tests {
@@ -287,6 +337,18 @@ func TestPostMappingHandler(t *testing.T) {
 			var userID int64 = 1337
 			var memberID int64 = 1
 			var conversationID int64 = 11
+
+			mockUsersHandler := func(w http.ResponseWriter, r *http.Request) {
+				if test.KarenStatusCode != http.StatusOK {
+					http.Error(w, "User not found", test.KarenStatusCode)
+					return
+				}
+
+				json.NewEncoder(w)
+			}
+
+			server := httptest.NewServer(http.HandlerFunc(mockUsersHandler))
+			defer server.Close()
 
 			reqBody, _ := json.Marshal(test.ReqBody)
 			r := httptest.NewRequest("POST", "/ether/v1/conversations/11/users", bytes.NewReader(reqBody))
@@ -307,7 +369,11 @@ func TestPostMappingHandler(t *testing.T) {
 				errList,
 			)
 
-			env := &Env{DB: mDB}
+			env := &Env{
+				DB:        mDB,
+				Client:    &http.Client{},
+				KarenHost: strings.TrimPrefix(server.URL, "http://"),
+			}
 			env.PostMappingHandler(w, r)
 
 			if w.Code != test.StatusCode {
