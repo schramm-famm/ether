@@ -180,7 +180,7 @@ resource "aws_msk_cluster" "main" {
   broker_node_group_info {
     instance_type   = "kafka.m5.large"
     ebs_volume_size = 1000
-    client_subnets  = module.ecs_base.vpc_public_subnets
+    client_subnets  = module.ecs_base.vpc_private_subnets
     security_groups = [aws_security_group.kafka.id]
   }
 
