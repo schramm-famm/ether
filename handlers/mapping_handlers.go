@@ -87,7 +87,7 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			errMsg := response.Status
 			log.Println(errMsg)
-			http.Error(w, errMsg, http.StatusBadRequest)
+			http.Error(w, errMsg, response.StatusCode)
 		}
 		return
 	}
