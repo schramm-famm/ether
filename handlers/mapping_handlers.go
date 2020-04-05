@@ -102,7 +102,7 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 
 	reqMember.ConversationID = conversationID
 	reqMember.Nickname = new(string)
-	var pending bool = true
+	var pending bool = false // TODO: set this to true
 	reqMember.Pending = &pending
 	reqMember.LastOpened = time.Now().Format("2006-01-02 15:04:05")
 	err = env.DB.CreateUserConversationMapping(reqMember)
@@ -117,6 +117,8 @@ func (env *Env) PostMappingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	// TODO: write to a Kafka topic for patches to read from
 
 	location := fmt.Sprintf("%s/%d", r.URL.Path, reqMember.UserID)
 	w.Header().Add("Location", location)

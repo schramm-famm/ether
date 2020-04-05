@@ -48,7 +48,7 @@ func TestPostMappingHandler(t *testing.T) {
 				ConversationID: 11,
 				Role:           "user",
 				Nickname:       utils.StringPtr(""),
-				Pending:        utils.BoolPtr(true),
+				Pending:        utils.BoolPtr(false),
 			},
 			Conversation: &models.Conversation{
 				ID:          11,
@@ -77,7 +77,7 @@ func TestPostMappingHandler(t *testing.T) {
 				ConversationID: 11,
 				Role:           "admin",
 				Nickname:       utils.StringPtr(""),
-				Pending:        utils.BoolPtr(true),
+				Pending:        utils.BoolPtr(false),
 			},
 			Conversation: &models.Conversation{
 				ID:          11,
@@ -106,7 +106,7 @@ func TestPostMappingHandler(t *testing.T) {
 				ConversationID: 11,
 				Role:           "user",
 				Nickname:       utils.StringPtr(""),
-				Pending:        utils.BoolPtr(true),
+				Pending:        utils.BoolPtr(false),
 			},
 			Conversation: &models.Conversation{
 				ID:          11,
@@ -135,7 +135,7 @@ func TestPostMappingHandler(t *testing.T) {
 				ConversationID: 11,
 				Role:           "user",
 				Nickname:       utils.StringPtr(""),
-				Pending:        utils.BoolPtr(true),
+				Pending:        utils.BoolPtr(false),
 			},
 			Conversation: &models.Conversation{
 				ID:          11,
@@ -314,7 +314,7 @@ func TestPostMappingHandler(t *testing.T) {
 				ConversationID: 11,
 				Role:           "user",
 				Nickname:       utils.StringPtr(""),
-				Pending:        utils.BoolPtr(true),
+				Pending:        utils.BoolPtr(false),
 			},
 			Conversation: &models.Conversation{
 				ID:          11,
