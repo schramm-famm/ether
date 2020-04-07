@@ -15,6 +15,12 @@ variable "port" {
   default     = 80
 }
 
+variable "container_count" {
+  type        = number
+  description = "The number of containers to deploy in the ether service"
+  default     = 1
+}
+
 variable "cluster_id" {
   type        = string
   description = "ID of the ECS cluster that the ether service will run in"

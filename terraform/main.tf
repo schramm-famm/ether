@@ -83,6 +83,7 @@ module "ether" {
   name            = var.name
   container_tag   = var.ether_container_tag
   port            = 80
+  container_count = 1
   cluster_id      = module.ecs_cluster.cluster_id
   security_groups = [aws_security_group.load_balancer.id]
   subnets         = module.ecs_base.vpc_public_subnets
@@ -101,6 +102,7 @@ module "karen" {
   name            = var.name
   container_tag   = var.karen_container_tag
   port            = 8081
+  container_count = 1
   cluster_id      = module.ecs_cluster.cluster_id
   security_groups = [aws_security_group.load_balancer.id]
   subnets         = module.ecs_base.vpc_private_subnets
